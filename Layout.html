@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cosmic Study Voyage</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --space-void: #020209;
+  --space-deep: #070714;
+  --space-mid: #0d0d25;
+  --nebula-purple: #1a0a2e;
+  --nebula-blue: #0a1a3e;
+  --cockpit-dark: #080c12;
+  --cockpit-frame: #0e1520;
+  --cockpit-accent: #1a2535;
+  --hud-cyan: #00d4ff;
+  --hud-cyan-dim: rgba(0,212,255,0.3);
+  --hud-green: #00ff88;
+  --hud-green-dim: rgba(0,255,136,0.25);
+  --hud-amber: #ffaa00;
+  --hud-amber-dim: rgba(255,170,0,0.3);
+  --hud-red: #ff3355;
+  --star-white: #e8eaf6;
+  --text-dim: rgba(200,210,230,0.6);
+  --font-hud: 'Orbitron', monospace;
+  --font-body: 'Exo 2', sans-serif;
+  /* theme-driven accent, updated by JS */
+  --theme-accent: #00d4ff;
+  --theme-accent-dim: rgba(0,212,255,0.25);
+  --theme-accent-glow: rgba(0,212,255,0.15);
+  --panel-bg: rgba(4,7,16,0.97);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--space-void);
+  font-family: var(--font-body);
+  color: var(--star-white);
+  user-select: none;
+}
+
+/* ══════════════════════════════════════
+   SETUP SCREEN
+══════════════════════════════════════ */
+#setup-screen {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  background: radial-gradient(ellipse at 50% 40%, #0d0a2e 0%, #050510 60%, #020209 100%);
+  overflow-y: auto;
+  padding: 20px;
+}
+#setup-screen canvas#bg-stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+.setup-panel {
+  position: relative; z-index: 1;
+  max-width: 780px; width: 100%;
+  background: linear-gradient(160deg, rgba(13,13,37,0.95) 0%, rgba(8,8,20,0.98) 100%);
+  border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 4px;
+  padding: 48px;
+  box-shadow: 0 0 80px rgba(0,50,120,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.setup-panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hud-cyan), transparent);
+  opacity: 0.6;
+}
+
+.setup-logo { text-align: center; margin-bottom: 40px; }
+.setup-logo .logo-eyebrow {
+  font-family: var(--font-hud); font-size: 10px; letter-spacing: 4px;
+  color: var(--hud-cyan); opacity: 0.7; text-transform: uppercase; margin-bottom: 10px;
+}
+.setup-logo h1 {
+  font-family: var(--font-hud); font-size: clamp(22px, 4vw, 36px);
+  font-weight: 900; letter-spacing: 3px; line-height: 1.1;
+  background: linear-gradient(135deg, #fff 0%, #a0c8ff 50%, var(--hud-cyan) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.setup-logo p { margin-top: 10px; font-size: 13px; color: var(--text-dim); letter-spacing: 1px; }
+
+.setup-section { margin-bottom: 30px; }
+.setup-section label.section-title {
+  display: block; font-family: var(--font-hud); font-size: 9px;
+  letter-spacing: 3px; color: var(--hud-cyan); opacity: 0.8;
+  text-transform: uppercase; margin-bottom: 14px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(0,212,255,0.15);
+}
+.duration-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.duration-btn {
+  background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.2);
+  color: var(--text-dim); font-family: var(--font-hud); font-size: 11px;
+  padding: 12px 8px; border-radius: 3px; cursor: pointer;
+  transition: all 0.2s; text-align: center; letter-spacing: 1px;
+}
+.duration-btn:hover { border-color: var(--hud-cyan); color: var(--hud-cyan); background: rgba(0,212,255,0.08); }
+.duration-btn.active { border-color: var(--hud-cyan); color: var(--hud-cyan); background: rgba(0,212,255,0.15); box-shadow: 0 0 12px rgba(0,212,255,0.2); }
+
+.env-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
+.env-btn {
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-dim); font-family: var(--font-body); font-size: 12px;
+  padding: 14px 12px; border-radius: 3px; cursor: pointer;
+  transition: all 0.2s; text-align: left; line-height: 1.3;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.env-btn .env-icon { font-size: 20px; flex-shrink: 0; line-height: 1; }
+.env-btn:hover { border-color: rgba(255,255,255,0.25); color: var(--star-white); background: rgba(255,255,255,0.05); }
+.env-btn.active { color: white; }
+
+.launch-btn {
+  width: 100%; padding: 18px;
+  background: linear-gradient(90deg, #00aaff, #0066ff);
+  border: none; border-radius: 3px; cursor: pointer;
+  font-family: var(--font-hud); font-size: 13px; letter-spacing: 3px;
+  color: white; font-weight: 700; text-transform: uppercase;
+  transition: all 0.3s; margin-top: 10px;
+  box-shadow: 0 0 20px rgba(0,100,255,0.3);
+  position: relative; overflow: hidden;
+}
+.launch-btn:hover { box-shadow: 0 0 40px rgba(0,150,255,0.5); transform: translateY(-1px); }
+.launch-btn:active { transform: translateY(0); }
+.launch-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ══════════════════════════════════════
+   VOYAGE SCREEN
+══════════════════════════════════════ */
+#voyage-screen { position: fixed; inset: 0; display: none; background: var(--space-void); }
+#space-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+#cockpit { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; }
+.cockpit-window-frame { position: absolute; inset: 0; pointer-events: none; }
+.window-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 65% at 50% 42%, transparent 55%, rgba(5,8,15,0.7) 75%, rgba(5,8,15,0.98) 92%);
+  z-index: 2;
+}
+.frame-top { position: absolute; top: 0; left: 0; right: 0; height: 80px; background: linear-gradient(180deg, var(--cockpit-dark) 0%, rgba(8,12,18,0.92) 70%, transparent 100%); z-index: 10; }
+.frame-bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 200px; background: linear-gradient(0deg, var(--cockpit-dark) 0%, rgba(8,12,18,0.95) 50%, transparent 100%); z-index: 10; }
+.frame-left { position: absolute; top: 0; bottom: 0; left: 0; width: 200px; background: linear-gradient(90deg, var(--cockpit-dark) 0%, rgba(8,12,18,0.9) 50%, transparent 100%); z-index: 10; }
+.frame-right { position: absolute; top: 0; bottom: 0; right: 0; width: 200px; background: linear-gradient(270deg, var(--cockpit-dark) 0%, rgba(8,12,18,0.9) 50%, transparent 100%); z-index: 10; }
+.glass-reflection { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: linear-gradient(135deg, rgba(200,230,255,0.03) 0%, transparent 40%, rgba(200,230,255,0.015) 80%, transparent 100%); }
+.glass-scratches { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0.04; background-image: repeating-linear-gradient(87deg, transparent 0px, transparent 200px, rgba(255,255,255,0.5) 200px, rgba(255,255,255,0.5) 201px), repeating-linear-gradient(92deg, transparent 0px, transparent 350px, rgba(255,255,255,0.3) 350px, rgba(255,255,255,0.3) 351px); }
+.window-edge-glow { position: absolute; inset: 60px 160px 160px 160px; z-index: 1; pointer-events: none; border: 1px solid rgba(0,150,255,0.12); border-radius: 2px; box-shadow: inset 0 0 60px rgba(0,100,200,0.06); }
+.scanlines { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.03) 3px, rgba(0,0,0,0.03) 4px); }
+
+/* ══ TOP BAR ══ */
+.top-bar {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 80px; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  pointer-events: auto;
+}
+.top-bar-left { display: flex; align-items: center; gap: 12px; }
+.ship-name { font-family: var(--font-hud); font-size: 11px; letter-spacing: 4px; color: var(--hud-cyan); opacity: 0.8; }
+.top-divider { width: 1px; height: 24px; background: rgba(0,212,255,0.2); }
+.status-indicator { display: flex; align-items: center; gap: 6px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hud-green); box-shadow: 0 0 6px var(--hud-green); animation: pulse-dot 2s ease-in-out infinite; }
+@keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+.status-text { font-family: var(--font-hud); font-size: 9px; letter-spacing: 2px; color: var(--hud-green); opacity: 0.8; }
+
+/* ── TOOLBAR BUTTONS ── */
+.toolbar-btns { display: flex; align-items: center; gap: 6px; }
+.toolbar-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-hud); font-size: 8px; letter-spacing: 2px;
+  color: var(--text-dim); border: 1px solid rgba(0,212,255,0.18);
+  background: rgba(0,10,25,0.7); padding: 7px 12px; border-radius: 2px;
+  cursor: pointer; pointer-events: auto; transition: all 0.2s;
+  white-space: nowrap;
+}
+.toolbar-btn svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.7; }
+.toolbar-btn:hover { border-color: var(--theme-accent); color: var(--theme-accent); background: var(--theme-accent-glow); }
+.toolbar-btn:hover svg { opacity: 1; }
+.toolbar-btn.active { border-color: var(--theme-accent); color: var(--theme-accent); background: var(--theme-accent-dim); }
+.toolbar-btn.active svg { opacity: 1; }
+
+.top-bar-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.environment-label { font-family: var(--font-hud); font-size: 9px; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; }
+.environment-name { font-family: var(--font-hud); font-size: 13px; letter-spacing: 2px; color: var(--hud-cyan); }
+
+.top-bar-right { display: flex; align-items: center; gap: 16px; }
+.real-clock { font-family: var(--font-hud); font-size: 20px; font-weight: 700; color: var(--star-white); letter-spacing: 2px; text-shadow: 0 0 12px rgba(200,220,255,0.4); }
+.end-btn {
+  font-family: var(--font-hud); font-size: 9px; letter-spacing: 2px;
+  color: var(--hud-red); border: 1px solid rgba(255,50,80,0.3);
+  background: rgba(255,50,80,0.08); padding: 8px 14px; border-radius: 2px;
+  cursor: pointer; pointer-events: auto; transition: all 0.2s;
+}
+.end-btn:hover { background: rgba(255,50,80,0.18); border-color: var(--hud-red); }
+
+/* ══ FLOATING PANELS ══ */
+.floating-panel {
+  position: absolute; top: 88px; z-index: 100;
+  background: var(--panel-bg);
+  border: 1px solid rgba(var(--panel-border-rgb, 0,212,255), 0.22);
+  border-radius: 3px;
+  box-shadow: 0 8px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.3);
+  overflow: hidden;
+  opacity: 0; pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  min-width: 320px;
+}
+.floating-panel.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+/* Panel header */
+.fp-header {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid rgba(0,212,255,0.08);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.fp-title {
+  font-family: var(--font-hud); font-size: 9px; letter-spacing: 3px;
+  color: var(--theme-accent); text-transform: uppercase;
+}
+.fp-close {
+  font-size: 14px; color: var(--text-dim); cursor: pointer; line-height: 1;
+  background: none; border: none; padding: 0 2px; transition: color 0.15s;
+}
+.fp-close:hover { color: var(--star-white); }
+.fp-body { padding: 16px 18px; }
+
+/* Sound panel */
+#sound-panel { left: 24px; width: 360px; max-height: calc(100vh - 120px); overflow-y: auto; }
+#sound-panel::-webkit-scrollbar { width: 3px; }
+#sound-panel::-webkit-scrollbar-track { background: transparent; }
+#sound-panel::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 2px; }
+
+.sound-section-label {
+  font-family: var(--font-hud); font-size: 8px; letter-spacing: 3px;
+  color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; margin-top: 4px;
+  padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.sound-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.sound-toggle {
+  width: 30px; height: 30px; flex-shrink: 0;
+  background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 2px; cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; color: var(--text-dim);
+}
+.sound-toggle.on { background: var(--theme-accent-dim); border-color: var(--theme-accent); color: var(--theme-accent); box-shadow: 0 0 8px var(--theme-accent-glow); }
+.sound-toggle:hover { border-color: var(--theme-accent); }
+.sound-label { font-size: 11px; color: var(--text-dim); flex: 1; white-space: nowrap; font-family: var(--font-body); }
+.sound-slider-wrap { flex: 2; display: flex; align-items: center; gap: 8px; }
+.sound-vol-bar {
+  flex: 1; height: 3px; background: rgba(0,212,255,0.12); border-radius: 2px;
+  appearance: none; -webkit-appearance: none; cursor: pointer; outline: none;
+}
+.sound-vol-bar::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--theme-accent); box-shadow: 0 0 6px var(--theme-accent-glow); cursor: pointer;
+}
+.sound-vol-bar::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%; border: none;
+  background: var(--theme-accent); cursor: pointer;
+}
+.sound-vol-pct { font-family: var(--font-hud); font-size: 9px; color: var(--text-dim); width: 28px; text-align: right; }
+
+/* master volume */
+.master-row { display: flex; align-items: center; gap: 10px; padding: 10px 0 14px; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 14px; }
+.master-label { font-family: var(--font-hud); font-size: 9px; letter-spacing: 2px; color: var(--theme-accent); }
+.master-vol-bar {
+  flex: 1; height: 4px; background: rgba(0,212,255,0.12); border-radius: 2px;
+  appearance: none; -webkit-appearance: none; cursor: pointer; outline: none;
+}
+.master-vol-bar::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--theme-accent); box-shadow: 0 0 8px var(--theme-accent-glow); cursor: pointer;
+}
+.master-vol-bar::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%; border: none;
+  background: var(--theme-accent); cursor: pointer;
+}
+
+/* Spotify widget */
+.spotify-row {
+  margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.05);
+}
+.spotify-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(30,215,96,0.07); border: 1px solid rgba(30,215,96,0.2);
+  border-radius: 3px; padding: 10px 12px;
+}
+.spotify-icon { font-size: 18px; flex-shrink: 0; }
+.spotify-info { flex: 1; min-width: 0; }
+.spotify-track { font-size: 11px; color: var(--star-white); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spotify-artist { font-size: 10px; color: var(--text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spotify-vol-wrap { display: flex; align-items: center; gap: 8px; min-width: 80px; }
+.spotify-connect-btn {
+  font-family: var(--font-hud); font-size: 8px; letter-spacing: 1px;
+  color: #1ed660; border: 1px solid rgba(30,215,96,0.3); background: rgba(30,215,96,0.07);
+  padding: 7px 12px; border-radius: 2px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.spotify-connect-btn:hover { background: rgba(30,215,96,0.15); border-color: #1ed660; }
+.spotify-status-text { font-size: 10px; color: var(--text-dim); }
+
+/* Settings panel */
+#settings-panel { right: 24px; width: 340px; }
+
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px;
+}
+.setting-label { font-size: 12px; color: var(--text-dim); flex: 1; }
+.setting-toggle-wrap { flex-shrink: 0; }
+.hud-toggle {
+  width: 40px; height: 20px; border-radius: 10px;
+  background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.25);
+  position: relative; cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+}
+.hud-toggle.on { background: var(--theme-accent-dim); border-color: var(--theme-accent); }
+.hud-toggle::after {
+  content: ''; position: absolute; top: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: rgba(0,212,255,0.4); left: 2px; transition: left 0.2s;
+}
+.hud-toggle.on::after { background: var(--theme-accent); left: 22px; box-shadow: 0 0 6px var(--theme-accent-glow); }
+
+.settings-divider {
+  font-family: var(--font-hud); font-size: 8px; letter-spacing: 3px;
+  color: var(--text-dim); text-transform: uppercase; margin: 16px 0 12px;
+  padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.setting-select {
+  background: rgba(0,10,25,0.7); border: 1px solid rgba(0,212,255,0.2);
+  color: var(--star-white); font-family: var(--font-hud); font-size: 10px;
+  padding: 7px 10px; border-radius: 2px; cursor: pointer; outline: none;
+  letter-spacing: 1px;
+}
+.setting-select option { background: #070714; }
+
+/* ══ LEFT PANEL ══ */
+.left-panel {
+  position: absolute; left: 0; top: 80px; bottom: 0;
+  width: 200px; z-index: 20;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 20px 18px 180px 18px;
+  pointer-events: auto;
+}
+.hud-widget {
+  background: rgba(5,10,20,0.7); border: 1px solid rgba(0,212,255,0.12);
+  border-radius: 2px; padding: 12px; backdrop-filter: blur(4px);
+}
+.hud-widget-title {
+  font-family: var(--font-hud); font-size: 8px; letter-spacing: 3px;
+  color: var(--hud-cyan); opacity: 0.6; text-transform: uppercase;
+  margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(0,212,255,0.1);
+}
+.progress-bar-track { width: 100%; height: 4px; background: rgba(0,212,255,0.1); border-radius: 2px; overflow: hidden; margin: 8px 0 4px; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--hud-cyan), #00aaff); border-radius: 2px; transition: width 1s linear; box-shadow: 0 0 8px var(--hud-cyan); width: 0%; }
+.progress-pct { font-family: var(--font-hud); font-size: 22px; font-weight: 700; color: var(--hud-cyan); }
+.progress-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.time-remaining-value { font-family: var(--font-hud); font-size: 18px; font-weight: 600; color: var(--hud-amber); letter-spacing: 2px; }
+.time-elapsed-value { font-family: var(--font-hud); font-size: 12px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+.velocity-bars { display: flex; gap: 3px; align-items: flex-end; height: 24px; margin: 6px 0; }
+.vel-bar { flex: 1; background: rgba(0,255,136,0.15); border-radius: 1px; transition: height 0.5s ease; }
+.vel-bar.active { background: var(--hud-green); box-shadow: 0 0 4px var(--hud-green); }
+.velocity-value { font-family: var(--font-hud); font-size: 11px; color: var(--hud-green); }
+.planets-count { font-family: var(--font-hud); font-size: 28px; font-weight: 900; color: var(--star-white); line-height: 1; }
+.planets-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+/* ══ RIGHT PANEL ══ */
+.right-panel {
+  position: absolute; right: 0; top: 80px; bottom: 0;
+  width: 200px; z-index: 20;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 20px 18px 180px 18px;
+  pointer-events: auto;
+}
+.tip-text { font-size: 12px; line-height: 1.6; color: rgba(180,200,230,0.7); font-style: italic; transition: opacity 0.5s; }
+.tip-source { font-family: var(--font-hud); font-size: 9px; color: var(--hud-amber); margin-top: 8px; letter-spacing: 1px; }
+.gauge-row { display: flex; gap: 10px; }
+.mini-gauge { flex: 1; text-align: center; }
+.gauge-ring { width: 44px; height: 44px; margin: 0 auto 4px; }
+.gauge-label { font-family: var(--font-hud); font-size: 8px; letter-spacing: 1px; color: var(--text-dim); }
+.switch-row { display: flex; flex-direction: column; gap: 6px; }
+.switch-item { display: flex; align-items: center; justify-content: space-between; }
+.switch-item-label { font-size: 10px; color: var(--text-dim); }
+.switch-toggle { width: 28px; height: 14px; border-radius: 7px; background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.25); position: relative; }
+.switch-toggle.on { background: rgba(0,255,136,0.15); border-color: var(--hud-green); }
+.switch-toggle::after { content: ''; position: absolute; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: rgba(0,212,255,0.4); left: 2px; transition: left 0.3s; }
+.switch-toggle.on::after { background: var(--hud-green); left: 16px; box-shadow: 0 0 4px var(--hud-green); }
+
+/* ══ BOTTOM BAR ══ */
+.bottom-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 200px; z-index: 20;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 20px 20px 20px; pointer-events: none;
+}
+.bottom-left { display: flex; gap: 10px; align-items: flex-end; pointer-events: auto; }
+.bottom-center { display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: auto; }
+.bottom-right { display: flex; gap: 10px; align-items: flex-end; pointer-events: auto; }
+.deco-btn-group { display: flex; flex-direction: column; gap: 6px; }
+.deco-btn { display: flex; align-items: center; gap: 8px; background: rgba(5,10,20,0.8); border: 1px solid rgba(0,212,255,0.12); border-radius: 2px; padding: 8px 12px; font-size: 10px; }
+.deco-btn .btn-led { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.deco-btn .btn-text { font-family: var(--font-hud); font-size: 8px; letter-spacing: 2px; color: var(--text-dim); }
+.speaker-grill { display: grid; grid-template-columns: repeat(5, 6px); gap: 4px; padding: 8px; background: rgba(5,10,20,0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 2px; }
+.grill-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.06); }
+.coord-display { background: rgba(5,10,20,0.8); border: 1px solid rgba(0,212,255,0.15); border-radius: 2px; padding: 10px 18px; text-align: center; }
+.coord-label { font-family: var(--font-hud); font-size: 8px; letter-spacing: 3px; color: var(--hud-cyan); opacity: 0.6; margin-bottom: 4px; }
+.coord-value { font-family: var(--font-hud); font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
+.nav-light { width: 8px; height: 8px; border-radius: 50%; }
+.nav-light.red { background: var(--hud-red); box-shadow: 0 0 8px var(--hud-red); animation: nav-blink 1.2s ease-in-out infinite; }
+.nav-light.green { background: var(--hud-green); box-shadow: 0 0 8px var(--hud-green); animation: nav-blink 1.8s ease-in-out infinite 0.6s; }
+@keyframes nav-blink { 0%,45%,100% { opacity:1; } 50%,95% { opacity:0.15; } }
+
+/* Notifications */
+#planet-notify {
+  position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
+  z-index: 30;
+  background: rgba(5,10,20,0.92); border: 1px solid rgba(0,212,255,0.3);
+  border-radius: 3px; padding: 10px 20px;
+  font-family: var(--font-hud); font-size: 10px; letter-spacing: 2px;
+  color: var(--hud-cyan); text-align: center;
+  opacity: 0; transition: opacity 0.5s; pointer-events: none;
+  white-space: nowrap;
+}
+#planet-notify.visible { opacity: 1; }
+
+#warp-overlay {
+  position: absolute; inset: 0; z-index: 50;
+  background: radial-gradient(ellipse at center, white 0%, rgba(100,180,255,0.8) 30%, transparent 70%);
+  opacity: 0; pointer-events: none; transition: opacity 0.4s;
+}
+#warp-overlay.active { opacity: 1; }
+
+@keyframes launch-fade { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; pointer-events: none; } }
+.launching { animation: launch-fade 2s forwards; }
+
+@media (max-width: 768px) {
+  .left-panel, .right-panel { width: 130px; }
+  .frame-left, .frame-right { width: 130px; }
+  .window-edge-glow { inset: 60px 100px 160px 100px; }
+  .setup-panel { padding: 24px; }
+  .env-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  #sound-panel { left: 4px; right: 4px; min-width: unset; width: auto; }
+  #settings-panel { left: 4px; right: 4px; min-width: unset; width: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <canvas id="bg-stars"></canvas>
+  <div class="setup-panel">
+    <div class="setup-logo">
+      <div class="logo-eyebrow">Navigation System v4.7.2</div>
+      <h1>COSMIC STUDY<br>VOYAGE</h1>
+      <p>Set your course. Begin your journey. Study among the stars.</p>
+    </div>
+
+    <div class="setup-section">
+      <label class="section-title">▸ Session Duration</label>
+      <div class="duration-grid">
+        <button class="duration-btn" data-minutes="15">15 min</button>
+        <button class="duration-btn" data-minutes="25">25 min</button>
+        <button class="duration-btn active" data-minutes="30">30 min</button>
+        <button class="duration-btn" data-minutes="45">45 min</button>
+        <button class="duration-btn" data-minutes="60">1 hour</button>
+        <button class="duration-btn" data-minutes="90">90 min</button>
+        <button class="duration-btn" data-minutes="120">2 hours</button>
+        <button class="duration-btn" data-minutes="180">3 hours</button>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <label class="section-title">▸ Space Environment</label>
+      <div class="env-grid">
+        <button class="env-btn active" data-env="nebula"><span class="env-icon">🌌</span><div><div style="color:white;font-weight:500">Nebula Fields</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Radiant gas clouds</div></div></button>
+        <button class="env-btn" data-env="cosmic-rain"><span class="env-icon">🌧️</span><div><div>Cosmic Rain</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Plasma particle storms</div></div></button>
+        <button class="env-btn" data-env="dust"><span class="env-icon">🌫️</span><div><div>Dust Clouds</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Dense matter drifts</div></div></button>
+        <button class="env-btn" data-env="asteroids"><span class="env-icon">🪨</span><div><div>Asteroid Belt</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Rocky debris fields</div></div></button>
+        <button class="env-btn" data-env="crystal"><span class="env-icon">💎</span><div><div>Crystal Space</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Prismatic formations</div></div></button>
+        <button class="env-btn" data-env="volcanic"><span class="env-icon">🌋</span><div><div>Volcanic Region</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Molten star ejecta</div></div></button>
+        <button class="env-btn" data-env="frozen"><span class="env-icon">❄️</span><div><div>Frozen Void</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Sub-zero expanse</div></div></button>
+        <button class="env-btn" data-env="dark-matter"><span class="env-icon">🕳️</span><div><div>Dark Matter Zone</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Unseen forces</div></div></button>
+        <button class="env-btn" data-env="aurora"><span class="env-icon">🌈</span><div><div>Aurora Space</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Magnetic light shows</div></div></button>
+        <button class="env-btn" data-env="mixed"><span class="env-icon">🎲</span><div><div>Mixed Random</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Surprises await</div></div></button>
+      </div>
+    </div>
+
+    <button class="launch-btn" id="launch-btn" onclick="launchVoyage()">⚡ INITIATE VOYAGE</button>
+  </div>
+</div>
+
+<!-- VOYAGE SCREEN -->
+<div id="voyage-screen">
+  <canvas id="space-canvas"></canvas>
+
+  <div id="cockpit">
+    <div class="cockpit-window-frame">
+      <div class="scanlines"></div>
+      <div class="window-vignette"></div>
+      <div class="glass-reflection"></div>
+      <div class="glass-scratches"></div>
+      <div class="window-edge-glow"></div>
+    </div>
+    <div class="frame-top"></div>
+    <div class="frame-bottom"></div>
+    <div class="frame-left"></div>
+    <div class="frame-right"></div>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <div class="ship-name">C.S.V. ODYSSEY</div>
+        <div class="top-divider"></div>
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <div class="status-text">VOYAGE ACTIVE</div>
+        </div>
+        <div class="top-divider"></div>
+        <div class="toolbar-btns">
+          <!-- Sound button -->
+          <button class="toolbar-btn" id="btn-sound" onclick="togglePanel('sound')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+            SOUND
+          </button>
+          <!-- Settings button -->
+          <button class="toolbar-btn" id="btn-settings" onclick="togglePanel('settings')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            SETTINGS
+          </button>
+        </div>
+      </div>
+
+      <div class="top-bar-center">
+        <div class="environment-label">Current Region</div>
+        <div class="environment-name" id="env-display-name">Nebula Fields</div>
+      </div>
+
+      <div class="top-bar-right">
+        <div class="real-clock" id="real-clock">00:00:00</div>
+        <button class="end-btn" onclick="endVoyage()">END SESSION</button>
+      </div>
+    </div>
+
+    <!-- SOUND PANEL -->
+    <div class="floating-panel" id="sound-panel">
+      <div class="fp-header">
+        <div class="fp-title">
+          <svg style="width:10px;height:10px;margin-right:6px;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          Sound Control
+        </div>
+        <button class="fp-close" onclick="closePanel('sound')">✕</button>
+      </div>
+      <div class="fp-body">
+        <!-- Master volume -->
+        <div class="master-row">
+          <span class="master-label">MASTER VOL</span>
+          <input type="range" class="master-vol-bar" id="master-vol" min="0" max="100" value="70" oninput="setMasterVol(this.value)">
+          <span class="sound-vol-pct" id="master-vol-pct">70%</span>
+        </div>
+
+        <!-- ROCKET sounds -->
+        <div class="sound-section-label">🚀 Rocket & Ship</div>
+        <div id="sound-rows-rocket"></div>
+
+        <!-- SPACE sounds -->
+        <div class="sound-section-label" style="margin-top:14px">🌌 Space Ambiance</div>
+        <div id="sound-rows-space"></div>
+
+        <!-- STUDY sounds -->
+        <div class="sound-section-label" style="margin-top:14px">📚 Focus & Study</div>
+        <div id="sound-rows-study"></div>
+
+        <!-- Spotify -->
+        <div class="spotify-row">
+          <div class="sound-section-label">🎵 Spotify Now Playing</div>
+          <div id="spotify-widget">
+            <div class="spotify-bar" id="spotify-bar">
+              <span class="spotify-icon">🎵</span>
+              <div class="spotify-info">
+                <div class="spotify-status-text" id="spotify-status">Connect Spotify to show current track</div>
+              </div>
+              <button class="spotify-connect-btn" id="spotify-btn" onclick="connectSpotify()">CONNECT</button>
+            </div>
+            <div id="spotify-vol-row" style="display:none; margin-top:8px;">
+              <div class="sound-row">
+                <span class="sound-label">Spotify Volume</span>
+                <div class="sound-slider-wrap">
+                  <input type="range" class="sound-vol-bar" id="spotify-vol" min="0" max="100" value="80" oninput="setSpotifyVol(this.value)">
+                  <span class="sound-vol-pct" id="spotify-vol-pct">80%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="floating-panel" id="settings-panel">
+      <div class="fp-header">
+        <div class="fp-title">
+          <svg style="width:10px;height:10px;margin-right:6px;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Mission Settings
+        </div>
+        <button class="fp-close" onclick="closePanel('settings')">✕</button>
+      </div>
+      <div class="fp-body">
+        <div class="settings-divider">Session</div>
+        <div class="setting-row">
+          <span class="setting-label">Show planet notifications</span>
+          <div class="hud-toggle on" id="tog-planets" onclick="toggleSetting('planets', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Show study tips panel</span>
+          <div class="hud-toggle on" id="tog-tips" onclick="toggleSetting('tips', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Ship shake effect</span>
+          <div class="hud-toggle on" id="tog-shake" onclick="toggleSetting('shake', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Warp flash on planet pass</span>
+          <div class="hud-toggle" id="tog-warp" onclick="toggleSetting('warp', this)"></div>
+        </div>
+
+        <div class="settings-divider">Visual</div>
+        <div class="setting-row">
+          <span class="setting-label">Scanline effect</span>
+          <div class="hud-toggle on" id="tog-scanlines" onclick="toggleSetting('scanlines', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Glass reflection overlay</span>
+          <div class="hud-toggle on" id="tog-glass" onclick="toggleSetting('glass', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Window vignette</span>
+          <div class="hud-toggle on" id="tog-vignette" onclick="toggleSetting('vignette', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Nebula glow</span>
+          <div class="hud-toggle on" id="tog-nebula" onclick="toggleSetting('nebula', this)"></div>
+        </div>
+
+        <div class="settings-divider">Navigation</div>
+        <div class="setting-row">
+          <span class="setting-label">Tip refresh rate</span>
+          <select class="setting-select" onchange="setTipRate(this.value)">
+            <option value="10">Every 10s</option>
+            <option value="18" selected>Every 18s</option>
+            <option value="30">Every 30s</option>
+            <option value="60">Every minute</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Planet spawn rate</span>
+          <select class="setting-select" id="planet-rate" onchange="setPlanetRate(this.value)">
+            <option value="fast">Fast</option>
+            <option value="normal" selected>Normal</option>
+            <option value="slow">Slow</option>
+            <option value="rare">Very Rare</option>
+          </select>
+        </div>
+
+        <div class="settings-divider">Environment</div>
+        <div class="setting-row">
+          <span class="setting-label">Current environment</span>
+          <span style="font-family:var(--font-hud);font-size:10px;color:var(--theme-accent)" id="current-env-label">Nebula Fields</span>
+        </div>
+        <div class="setting-row" style="margin-top:6px;">
+          <span class="setting-label" style="font-size:10px;opacity:0.5">Change environment on setup screen</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <div class="hud-widget">
+        <div class="hud-widget-title">Voyage Progress</div>
+        <div class="progress-pct" id="progress-pct">0%</div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-bar"></div></div>
+        <div class="progress-label" id="progress-label">Beginning journey...</div>
+      </div>
+      <div class="hud-widget">
+        <div class="hud-widget-title">Time Remaining</div>
+        <div class="time-remaining-value" id="time-remaining">—:——</div>
+        <div class="time-elapsed-value" id="time-elapsed">Elapsed: 0:00</div>
+      </div>
+      <div class="hud-widget">
+        <div class="hud-widget-title">Ship Velocity</div>
+        <div class="velocity-bars" id="vel-bars">
+          <div class="vel-bar active" style="height:40%"></div>
+          <div class="vel-bar active" style="height:60%"></div>
+          <div class="vel-bar active" style="height:80%"></div>
+          <div class="vel-bar active" style="height:65%"></div>
+          <div class="vel-bar active" style="height:90%"></div>
+          <div class="vel-bar active" style="height:75%"></div>
+          <div class="vel-bar active" style="height:55%"></div>
+          <div class="vel-bar" style="height:30%"></div>
+        </div>
+        <div class="velocity-value">0.42c — CRUISE</div>
+      </div>
+      <div class="hud-widget">
+        <div class="hud-widget-title">Worlds Discovered</div>
+        <div class="planets-count" id="planets-count">0</div>
+        <div class="planets-label">unique planets passed</div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <div class="hud-widget" style="flex:1;display:flex;flex-direction:column;" id="tips-widget">
+        <div class="hud-widget-title">Study Insight</div>
+        <div class="tip-text" id="tip-text">Loading your first insight...</div>
+        <div class="tip-source" id="tip-source">▸ FOCUS SYSTEM</div>
+      </div>
+      <div class="hud-widget">
+        <div class="hud-widget-title">Ship Systems</div>
+        <div class="switch-row">
+          <div class="switch-item"><div class="switch-item-label">Life Support</div><div class="switch-toggle on"></div></div>
+          <div class="switch-item"><div class="switch-item-label">Nav Array</div><div class="switch-toggle on"></div></div>
+          <div class="switch-item"><div class="switch-item-label">Shields</div><div class="switch-toggle on"></div></div>
+          <div class="switch-item"><div class="switch-item-label">Warp Drive</div><div class="switch-toggle on"></div></div>
+          <div class="switch-item"><div class="switch-item-label">Autopilot</div><div class="switch-toggle on"></div></div>
+        </div>
+      </div>
+      <div class="hud-widget">
+        <div class="hud-widget-title">Environment Scan</div>
+        <div class="gauge-row">
+          <div class="mini-gauge">
+            <svg class="gauge-ring" viewBox="0 0 44 44">
+              <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(0,212,255,0.1)" stroke-width="3"/>
+              <circle cx="22" cy="22" r="18" fill="none" stroke="var(--hud-cyan)" stroke-width="3" stroke-dasharray="70 43" stroke-dashoffset="28" stroke-linecap="round" transform="rotate(-90 22 22)"/>
+              <text x="22" y="26" text-anchor="middle" fill="var(--hud-cyan)" font-family="Orbitron" font-size="9">72%</text>
+            </svg>
+            <div class="gauge-label">TEMP</div>
+          </div>
+          <div class="mini-gauge">
+            <svg class="gauge-ring" viewBox="0 0 44 44">
+              <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,170,0,0.1)" stroke-width="3"/>
+              <circle cx="22" cy="22" r="18" fill="none" stroke="var(--hud-amber)" stroke-width="3" stroke-dasharray="55 58" stroke-dashoffset="28" stroke-linecap="round" transform="rotate(-90 22 22)"/>
+              <text x="22" y="26" text-anchor="middle" fill="var(--hud-amber)" font-family="Orbitron" font-size="9">48%</text>
+            </svg>
+            <div class="gauge-label">DENSITY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM BAR -->
+    <div class="bottom-bar">
+      <div class="bottom-left">
+        <div class="speaker-grill">
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+        </div>
+        <div class="deco-btn-group">
+          <div class="deco-btn"><div class="btn-led" style="background:var(--hud-green);box-shadow:0 0 4px var(--hud-green)"></div><div class="btn-text">MAIN ENGINE</div></div>
+          <div class="deco-btn"><div class="btn-led" style="background:var(--hud-cyan);box-shadow:0 0 4px var(--hud-cyan)"></div><div class="btn-text">WARP COILS</div></div>
+          <div class="deco-btn"><div class="btn-led" style="background:var(--hud-amber);box-shadow:0 0 4px var(--hud-amber)"></div><div class="btn-text">HULL INTEGRITY</div></div>
+        </div>
+      </div>
+      <div class="bottom-center">
+        <div class="coord-display">
+          <div class="coord-label">Galactic Position</div>
+          <div class="coord-value" id="coord-value">X:+2847.3 Y:-0391.7 Z:+1203.5</div>
+        </div>
+        <div style="display:flex;gap:16px;align-items:center">
+          <div class="nav-light red"></div>
+          <div style="font-family:var(--font-hud);font-size:9px;color:var(--text-dim);letter-spacing:2px">C.S.V. ODYSSEY</div>
+          <div class="nav-light green"></div>
+        </div>
+      </div>
+      <div class="bottom-right">
+        <div class="deco-btn-group">
+          <div class="deco-btn"><div class="btn-led" style="background:var(--hud-cyan);box-shadow:0 0 4px var(--hud-cyan)"></div><div class="btn-text">SENSORS ONLINE</div></div>
+          <div class="deco-btn"><div class="btn-led" style="background:var(--hud-green);box-shadow:0 0 4px var(--hud-green)"></div><div class="btn-text">COMMS ACTIVE</div></div>
+          <div class="deco-btn"><div class="btn-led" style="background:rgba(255,80,80,0.6)"></div><div class="btn-text">WEAPONS OFFLINE</div></div>
+        </div>
+        <div class="speaker-grill">
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="planet-notify">◈ APPROACHING UNCHARTED WORLD</div>
+  <div id="warp-overlay"></div>
+</div>
