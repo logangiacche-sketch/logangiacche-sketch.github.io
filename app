@@ -1,1 +1,1881 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cosmic Study Voyage</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --space-void: #020209;
+  --space-deep: #070714;
+  --space-mid: #0d0d25;
+  --nebula-purple: #1a0a2e;
+  --nebula-blue: #0a1a3e;
+  --cockpit-dark: #080c12;
+  --cockpit-frame: #0e1520;
+  --cockpit-accent: #1a2535;
+  --hud-cyan: #00d4ff;
+  --hud-cyan-dim: rgba(0,212,255,0.3);
+  --hud-green: #00ff88;
+  --hud-green-dim: rgba(0,255,136,0.25);
+  --hud-amber: #ffaa00;
+  --hud-amber-dim: rgba(255,170,0,0.3);
+  --hud-red: #ff3355;
+  --star-white: #e8eaf6;
+  --text-dim: rgba(200,210,230,0.6);
+  --font-hud: 'Orbitron', monospace;
+  --font-body: 'Exo 2', sans-serif;
+  /* theme-driven accent, updated by JS */
+  --theme-accent: #00d4ff;
+  --theme-accent-dim: rgba(0,212,255,0.25);
+  --theme-accent-glow: rgba(0,212,255,0.15);
+  --panel-bg: rgba(4,7,16,0.97);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--space-void);
+  font-family: var(--font-body);
+  color: var(--star-white);
+  user-select: none;
+}
+
+/* ══════════════════════════════════════
+   SETUP SCREEN
+══════════════════════════════════════ */
+#setup-screen {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  background: radial-gradient(ellipse at 50% 40%, #0d0a2e 0%, #050510 60%, #020209 100%);
+  overflow-y: auto;
+  padding: 20px;
+}
+#setup-screen canvas#bg-stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+.setup-panel {
+  position: relative; z-index: 1;
+  max-width: 780px; width: 100%;
+  background: linear-gradient(160deg, rgba(13,13,37,0.95) 0%, rgba(8,8,20,0.98) 100%);
+  border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 4px;
+  padding: 48px;
+  box-shadow: 0 0 80px rgba(0,50,120,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.setup-panel::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hud-cyan), transparent);
+  opacity: 0.6;
+}
+
+.setup-logo { text-align: center; margin-bottom: 40px; }
+.setup-logo .logo-eyebrow {
+  font-family: var(--font-hud); font-size: 10px; letter-spacing: 4px;
+  color: var(--hud-cyan); opacity: 0.7; text-transform: uppercase; margin-bottom: 10px;
+}
+.setup-logo h1 {
+  font-family: var(--font-hud); font-size: clamp(22px, 4vw, 36px);
+  font-weight: 900; letter-spacing: 3px; line-height: 1.1;
+  background: linear-gradient(135deg, #fff 0%, #a0c8ff 50%, var(--hud-cyan) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.setup-logo p { margin-top: 10px; font-size: 13px; color: var(--text-dim); letter-spacing: 1px; }
+
+.setup-section { margin-bottom: 30px; }
+.setup-section label.section-title {
+  display: block; font-family: var(--font-hud); font-size: 9px;
+  letter-spacing: 3px; color: var(--hud-cyan); opacity: 0.8;
+  text-transform: uppercase; margin-bottom: 14px;
+  padding-bottom: 6px; border-bottom: 1px solid rgba(0,212,255,0.15);
+}
+.duration-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.duration-btn {
+  background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.2);
+  color: var(--text-dim); font-family: var(--font-hud); font-size: 11px;
+  padding: 12px 8px; border-radius: 3px; cursor: pointer;
+  transition: all 0.2s; text-align: center; letter-spacing: 1px;
+}
+.duration-btn:hover { border-color: var(--hud-cyan); color: var(--hud-cyan); background: rgba(0,212,255,0.08); }
+.duration-btn.active { border-color: var(--hud-cyan); color: var(--hud-cyan); background: rgba(0,212,255,0.15); box-shadow: 0 0 12px rgba(0,212,255,0.2); }
+
+.env-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; }
+.env-btn {
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-dim); font-family: var(--font-body); font-size: 12px;
+  padding: 14px 12px; border-radius: 3px; cursor: pointer;
+  transition: all 0.2s; text-align: left; line-height: 1.3;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.env-btn .env-icon { font-size: 20px; flex-shrink: 0; line-height: 1; }
+.env-btn:hover { border-color: rgba(255,255,255,0.25); color: var(--star-white); background: rgba(255,255,255,0.05); }
+.env-btn.active { color: white; }
+
+.launch-btn {
+  width: 100%; padding: 18px;
+  background: linear-gradient(90deg, #00aaff, #0066ff);
+  border: none; border-radius: 3px; cursor: pointer;
+  font-family: var(--font-hud); font-size: 13px; letter-spacing: 3px;
+  color: white; font-weight: 700; text-transform: uppercase;
+  transition: all 0.3s; margin-top: 10px;
+  box-shadow: 0 0 20px rgba(0,100,255,0.3);
+  position: relative; overflow: hidden;
+}
+.launch-btn:hover { box-shadow: 0 0 40px rgba(0,150,255,0.5); transform: translateY(-1px); }
+.launch-btn:active { transform: translateY(0); }
+.launch-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ══════════════════════════════════════
+   VOYAGE SCREEN
+══════════════════════════════════════ */
+#voyage-screen { position: fixed; inset: 0; display: none; background: var(--space-void); }
+#space-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+#cockpit { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; }
+.cockpit-window-frame { position: absolute; inset: 0; pointer-events: none; }
+.window-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 65% at 50% 42%, transparent 55%, rgba(5,8,15,0.7) 75%, rgba(5,8,15,0.98) 92%);
+  z-index: 2;
+}
+.frame-top { position: absolute; top: 0; left: 0; right: 0; height: 80px; background: linear-gradient(180deg, var(--cockpit-dark) 0%, rgba(8,12,18,0.92) 70%, transparent 100%); z-index: 10; }
+.frame-bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 200px; background: linear-gradient(0deg, var(--cockpit-dark) 0%, rgba(8,12,18,0.95) 50%, transparent 100%); z-index: 10; }
+.frame-left { position: absolute; top: 0; bottom: 0; left: 0; width: 200px; background: linear-gradient(90deg, var(--cockpit-dark) 0%, rgba(8,12,18,0.9) 50%, transparent 100%); z-index: 10; }
+.frame-right { position: absolute; top: 0; bottom: 0; right: 0; width: 200px; background: linear-gradient(270deg, var(--cockpit-dark) 0%, rgba(8,12,18,0.9) 50%, transparent 100%); z-index: 10; }
+.glass-reflection { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: linear-gradient(135deg, rgba(200,230,255,0.03) 0%, transparent 40%, rgba(200,230,255,0.015) 80%, transparent 100%); }
+.glass-scratches { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0.04; background-image: repeating-linear-gradient(87deg, transparent 0px, transparent 200px, rgba(255,255,255,0.5) 200px, rgba(255,255,255,0.5) 201px), repeating-linear-gradient(92deg, transparent 0px, transparent 350px, rgba(255,255,255,0.3) 350px, rgba(255,255,255,0.3) 351px); }
+.window-edge-glow { position: absolute; inset: 60px 160px 160px 160px; z-index: 1; pointer-events: none; border: 1px solid rgba(0,150,255,0.12); border-radius: 2px; box-shadow: inset 0 0 60px rgba(0,100,200,0.06); }
+.scanlines { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.03) 3px, rgba(0,0,0,0.03) 4px); }
+
+/* ══ TOP BAR ══ */
+.top-bar {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 80px; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  pointer-events: auto;
+}
+.top-bar-left { display: flex; align-items: center; gap: 12px; }
+.ship-name { font-family: var(--font-hud); font-size: 11px; letter-spacing: 4px; color: var(--hud-cyan); opacity: 0.8; }
+.top-divider { width: 1px; height: 24px; background: rgba(0,212,255,0.2); }
+.status-indicator { display: flex; align-items: center; gap: 6px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hud-green); box-shadow: 0 0 6px var(--hud-green); animation: pulse-dot 2s ease-in-out infinite; }
+@keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+.status-text { font-family: var(--font-hud); font-size: 9px; letter-spacing: 2px; color: var(--hud-green); opacity: 0.8; }
+
+/* ── TOOLBAR BUTTONS ── */
+.toolbar-btns { display: flex; align-items: center; gap: 6px; }
+.toolbar-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-hud); font-size: 8px; letter-spacing: 2px;
+  color: var(--text-dim); border: 1px solid rgba(0,212,255,0.18);
+  background: rgba(0,10,25,0.7); padding: 7px 12px; border-radius: 2px;
+  cursor: pointer; pointer-events: auto; transition: all 0.2s;
+  white-space: nowrap;
+}
+.toolbar-btn svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.7; }
+.toolbar-btn:hover { border-color: var(--theme-accent); color: var(--theme-accent); background: var(--theme-accent-glow); }
+.toolbar-btn:hover svg { opacity: 1; }
+.toolbar-btn.active { border-color: var(--theme-accent); color: var(--theme-accent); background: var(--theme-accent-dim); }
+.toolbar-btn.active svg { opacity: 1; }
+
+.top-bar-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.environment-label { font-family: var(--font-hud); font-size: 9px; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; }
+.environment-name { font-family: var(--font-hud); font-size: 13px; letter-spacing: 2px; color: var(--hud-cyan); }
+
+.top-bar-right { display: flex; align-items: center; gap: 16px; }
+.real-clock { font-family: var(--font-hud); font-size: 20px; font-weight: 700; color: var(--star-white); letter-spacing: 2px; text-shadow: 0 0 12px rgba(200,220,255,0.4); }
+.end-btn {
+  font-family: var(--font-hud); font-size: 9px; letter-spacing: 2px;
+  color: var(--hud-red); border: 1px solid rgba(255,50,80,0.3);
+  background: rgba(255,50,80,0.08); padding: 8px 14px; border-radius: 2px;
+  cursor: pointer; pointer-events: auto; transition: all 0.2s;
+}
+.end-btn:hover { background: rgba(255,50,80,0.18); border-color: var(--hud-red); }
+
+/* ══ FLOATING PANELS ══ */
+.floating-panel {
+  position: absolute; top: 88px; z-index: 100;
+  background: var(--panel-bg);
+  border: 1px solid rgba(var(--panel-border-rgb, 0,212,255), 0.22);
+  border-radius: 3px;
+  box-shadow: 0 8px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.3);
+  overflow: hidden;
+  opacity: 0; pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  min-width: 320px;
+}
+.floating-panel.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+/* Panel header */
+.fp-header {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid rgba(0,212,255,0.08);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.fp-title {
+  font-family: var(--font-hud); font-size: 9px; letter-spacing: 3px;
+  color: var(--theme-accent); text-transform: uppercase;
+}
+.fp-close {
+  font-size: 14px; color: var(--text-dim); cursor: pointer; line-height: 1;
+  background: none; border: none; padding: 0 2px; transition: color 0.15s;
+}
+.fp-close:hover { color: var(--star-white); }
+.fp-body { padding: 16px 18px; }
+
+/* Sound panel */
+#sound-panel { left: 24px; width: 360px; max-height: calc(100vh - 120px); overflow-y: auto; }
+#sound-panel::-webkit-scrollbar { width: 3px; }
+#sound-panel::-webkit-scrollbar-track { background: transparent; }
+#sound-panel::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 2px; }
+
+.sound-section-label {
+  font-family: var(--font-hud); font-size: 8px; letter-spacing: 3px;
+  color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; margin-top: 4px;
+  padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.sound-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.sound-toggle {
+  width: 30px; height: 30px; flex-shrink: 0;
+  background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 2px; cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; color: var(--text-dim);
+}
+.sound-toggle.on { background: var(--theme-accent-dim); border-color: var(--theme-accent); color: var(--theme-accent); box-shadow: 0 0 8px var(--theme-accent-glow); }
+.sound-toggle:hover { border-color: var(--theme-accent); }
+.sound-label { font-size: 11px; color: var(--text-dim); flex: 1; white-space: nowrap; font-family: var(--font-body); }
+.sound-slider-wrap { flex: 2; display: flex; align-items: center; gap: 8px; }
+.sound-vol-bar {
+  flex: 1; height: 3px; background: rgba(0,212,255,0.12); border-radius: 2px;
+  appearance: none; -webkit-appearance: none; cursor: pointer; outline: none;
+}
+.sound-vol-bar::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--theme-accent); box-shadow: 0 0 6px var(--theme-accent-glow); cursor: pointer;
+}
+.sound-vol-bar::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%; border: none;
+  background: var(--theme-accent); cursor: pointer;
+}
+.sound-vol-pct { font-family: var(--font-hud); font-size: 9px; color: var(--text-dim); width: 28px; text-align: right; }
+
+/* master volume */
+.master-row { display: flex; align-items: center; gap: 10px; padding: 10px 0 14px; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 14px; }
+.master-label { font-family: var(--font-hud); font-size: 9px; letter-spacing: 2px; color: var(--theme-accent); }
+.master-vol-bar {
+  flex: 1; height: 4px; background: rgba(0,212,255,0.12); border-radius: 2px;
+  appearance: none; -webkit-appearance: none; cursor: pointer; outline: none;
+}
+.master-vol-bar::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--theme-accent); box-shadow: 0 0 8px var(--theme-accent-glow); cursor: pointer;
+}
+.master-vol-bar::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%; border: none;
+  background: var(--theme-accent); cursor: pointer;
+}
+
+/* Spotify widget */
+.spotify-row {
+  margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.05);
+}
+.spotify-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(30,215,96,0.07); border: 1px solid rgba(30,215,96,0.2);
+  border-radius: 3px; padding: 10px 12px;
+}
+.spotify-icon { font-size: 18px; flex-shrink: 0; }
+.spotify-info { flex: 1; min-width: 0; }
+.spotify-track { font-size: 11px; color: var(--star-white); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spotify-artist { font-size: 10px; color: var(--text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spotify-vol-wrap { display: flex; align-items: center; gap: 8px; min-width: 80px; }
+.spotify-connect-btn {
+  font-family: var(--font-hud); font-size: 8px; letter-spacing: 1px;
+  color: #1ed660; border: 1px solid rgba(30,215,96,0.3); background: rgba(30,215,96,0.07);
+  padding: 7px 12px; border-radius: 2px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.spotify-connect-btn:hover { background: rgba(30,215,96,0.15); border-color: #1ed660; }
+.spotify-status-text { font-size: 10px; color: var(--text-dim); }
+
+/* Settings panel */
+#settings-panel { right: 24px; width: 340px; }
+
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px;
+}
+.setting-label { font-size: 12px; color: var(--text-dim); flex: 1; }
+.setting-toggle-wrap { flex-shrink: 0; }
+.hud-toggle {
+  width: 40px; height: 20px; border-radius: 10px;
+  background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.25);
+  position: relative; cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+}
+.hud-toggle.on { background: var(--theme-accent-dim); border-color: var(--theme-accent); }
+.hud-toggle::after {
+  content: ''; position: absolute; top: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: rgba(0,212,255,0.4); left: 2px; transition: left 0.2s;
+}
+.hud-toggle.on::after { background: var(--theme-accent); left: 22px; box-shadow: 0 0 6px var(--theme-accent-glow); }
+
+.settings-divider {
+  font-family: var(--font-hud); font-size: 8px; letter-spacing: 3px;
+  color: var(--text-dim); text-transform: uppercase; margin: 16px 0 12px;
+  padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.setting-select {
+  background: rgba(0,10,25,0.7); border: 1px solid rgba(0,212,255,0.2);
+  color: var(--star-white); font-family: var(--font-hud); font-size: 10px;
+  padding: 7px 10px; border-radius: 2px; cursor: pointer; outline: none;
+  letter-spacing: 1px;
+}
+.setting-select option { background: #070714; }
+
+/* ══ LEFT PANEL ══ */
+.left-panel {
+  position: absolute; left: 0; top: 80px; bottom: 0;
+  width: 200px; z-index: 20;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 20px 18px 180px 18px;
+  pointer-events: auto;
+}
+.hud-widget {
+  background: rgba(5,10,20,0.7); border: 1px solid rgba(0,212,255,0.12);
+  border-radius: 2px; padding: 12px; backdrop-filter: blur(4px);
+}
+.hud-widget-title {
+  font-family: var(--font-hud); font-size: 8px; letter-spacing: 3px;
+  color: var(--hud-cyan); opacity: 0.6; text-transform: uppercase;
+  margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(0,212,255,0.1);
+}
+.progress-bar-track { width: 100%; height: 4px; background: rgba(0,212,255,0.1); border-radius: 2px; overflow: hidden; margin: 8px 0 4px; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--hud-cyan), #00aaff); border-radius: 2px; transition: width 1s linear; box-shadow: 0 0 8px var(--hud-cyan); width: 0%; }
+.progress-pct { font-family: var(--font-hud); font-size: 22px; font-weight: 700; color: var(--hud-cyan); }
+.progress-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.time-remaining-value { font-family: var(--font-hud); font-size: 18px; font-weight: 600; color: var(--hud-amber); letter-spacing: 2px; }
+.time-elapsed-value { font-family: var(--font-hud); font-size: 12px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+.velocity-bars { display: flex; gap: 3px; align-items: flex-end; height: 24px; margin: 6px 0; }
+.vel-bar { flex: 1; background: rgba(0,255,136,0.15); border-radius: 1px; transition: height 0.5s ease; }
+.vel-bar.active { background: var(--hud-green); box-shadow: 0 0 4px var(--hud-green); }
+.velocity-value { font-family: var(--font-hud); font-size: 11px; color: var(--hud-green); }
+.planets-count { font-family: var(--font-hud); font-size: 28px; font-weight: 900; color: var(--star-white); line-height: 1; }
+.planets-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+/* ══ RIGHT PANEL ══ */
+.right-panel {
+  position: absolute; right: 0; top: 80px; bottom: 0;
+  width: 200px; z-index: 20;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 20px 18px 180px 18px;
+  pointer-events: auto;
+}
+.tip-text { font-size: 12px; line-height: 1.6; color: rgba(180,200,230,0.7); font-style: italic; transition: opacity 0.5s; }
+.tip-source { font-family: var(--font-hud); font-size: 9px; color: var(--hud-amber); margin-top: 8px; letter-spacing: 1px; }
+.gauge-row { display: flex; gap: 10px; }
+.mini-gauge { flex: 1; text-align: center; }
+.gauge-ring { width: 44px; height: 44px; margin: 0 auto 4px; }
+.gauge-label { font-family: var(--font-hud); font-size: 8px; letter-spacing: 1px; color: var(--text-dim); }
+.switch-row { display: flex; flex-direction: column; gap: 6px; }
+.switch-item { display: flex; align-items: center; justify-content: space-between; }
+.switch-item-label { font-size: 10px; color: var(--text-dim); }
+.switch-toggle { width: 28px; height: 14px; border-radius: 7px; background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.25); position: relative; }
+.switch-toggle.on { background: rgba(0,255,136,0.15); border-color: var(--hud-green); }
+.switch-toggle::after { content: ''; position: absolute; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: rgba(0,212,255,0.4); left: 2px; transition: left 0.3s; }
+.switch-toggle.on::after { background: var(--hud-green); left: 16px; box-shadow: 0 0 4px var(--hud-green); }
+
+/* ══ BOTTOM BAR ══ */
+.bottom-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 200px; z-index: 20;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 20px 20px 20px; pointer-events: none;
+}
+.bottom-left { display: flex; gap: 10px; align-items: flex-end; pointer-events: auto; }
+.bottom-center { display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: auto; }
+.bottom-right { display: flex; gap: 10px; align-items: flex-end; pointer-events: auto; }
+.deco-btn-group { display: flex; flex-direction: column; gap: 6px; }
+.deco-btn { display: flex; align-items: center; gap: 8px; background: rgba(5,10,20,0.8); border: 1px solid rgba(0,212,255,0.12); border-radius: 2px; padding: 8px 12px; font-size: 10px; }
+.deco-btn .btn-led { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.deco-btn .btn-text { font-family: var(--font-hud); font-size: 8px; letter-spacing: 2px; color: var(--text-dim); }
+.speaker-grill { display: grid; grid-template-columns: repeat(5, 6px); gap: 4px; padding: 8px; background: rgba(5,10,20,0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 2px; }
+.grill-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.06); }
+.coord-display { background: rgba(5,10,20,0.8); border: 1px solid rgba(0,212,255,0.15); border-radius: 2px; padding: 10px 18px; text-align: center; }
+.coord-label { font-family: var(--font-hud); font-size: 8px; letter-spacing: 3px; color: var(--hud-cyan); opacity: 0.6; margin-bottom: 4px; }
+.coord-value { font-family: var(--font-hud); font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
+.nav-light { width: 8px; height: 8px; border-radius: 50%; }
+.nav-light.red { background: var(--hud-red); box-shadow: 0 0 8px var(--hud-red); animation: nav-blink 1.2s ease-in-out infinite; }
+.nav-light.green { background: var(--hud-green); box-shadow: 0 0 8px var(--hud-green); animation: nav-blink 1.8s ease-in-out infinite 0.6s; }
+@keyframes nav-blink { 0%,45%,100% { opacity:1; } 50%,95% { opacity:0.15; } }
+
+/* Notifications */
+#planet-notify {
+  position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
+  z-index: 30;
+  background: rgba(5,10,20,0.92); border: 1px solid rgba(0,212,255,0.3);
+  border-radius: 3px; padding: 10px 20px;
+  font-family: var(--font-hud); font-size: 10px; letter-spacing: 2px;
+  color: var(--hud-cyan); text-align: center;
+  opacity: 0; transition: opacity 0.5s; pointer-events: none;
+  white-space: nowrap;
+}
+#planet-notify.visible { opacity: 1; }
+
+#warp-overlay {
+  position: absolute; inset: 0; z-index: 50;
+  background: radial-gradient(ellipse at center, white 0%, rgba(100,180,255,0.8) 30%, transparent 70%);
+  opacity: 0; pointer-events: none; transition: opacity 0.4s;
+}
+#warp-overlay.active { opacity: 1; }
+
+@keyframes launch-fade { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; pointer-events: none; } }
+.launching { animation: launch-fade 2s forwards; }
+
+@media (max-width: 768px) {
+  .left-panel, .right-panel { width: 130px; }
+  .frame-left, .frame-right { width: 130px; }
+  .window-edge-glow { inset: 60px 100px 160px 100px; }
+  .setup-panel { padding: 24px; }
+  .env-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  #sound-panel { left: 4px; right: 4px; min-width: unset; width: auto; }
+  #settings-panel { left: 4px; right: 4px; min-width: unset; width: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <canvas id="bg-stars"></canvas>
+  <div class="setup-panel">
+    <div class="setup-logo">
+      <div class="logo-eyebrow">Navigation System v4.7.2</div>
+      <h1>COSMIC STUDY<br>VOYAGE</h1>
+      <p>Set your course. Begin your journey. Study among the stars.</p>
+    </div>
+
+    <div class="setup-section">
+      <label class="section-title">▸ Session Duration</label>
+      <div class="duration-grid">
+        <button class="duration-btn" data-minutes="15">15 min</button>
+        <button class="duration-btn" data-minutes="25">25 min</button>
+        <button class="duration-btn active" data-minutes="30">30 min</button>
+        <button class="duration-btn" data-minutes="45">45 min</button>
+        <button class="duration-btn" data-minutes="60">1 hour</button>
+        <button class="duration-btn" data-minutes="90">90 min</button>
+        <button class="duration-btn" data-minutes="120">2 hours</button>
+        <button class="duration-btn" data-minutes="180">3 hours</button>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <label class="section-title">▸ Space Environment</label>
+      <div class="env-grid">
+        <button class="env-btn active" data-env="nebula"><span class="env-icon">🌌</span><div><div style="color:white;font-weight:500">Nebula Fields</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Radiant gas clouds</div></div></button>
+        <button class="env-btn" data-env="cosmic-rain"><span class="env-icon">🌧️</span><div><div>Cosmic Rain</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Plasma particle storms</div></div></button>
+        <button class="env-btn" data-env="dust"><span class="env-icon">🌫️</span><div><div>Dust Clouds</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Dense matter drifts</div></div></button>
+        <button class="env-btn" data-env="asteroids"><span class="env-icon">🪨</span><div><div>Asteroid Belt</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Rocky debris fields</div></div></button>
+        <button class="env-btn" data-env="crystal"><span class="env-icon">💎</span><div><div>Crystal Space</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Prismatic formations</div></div></button>
+        <button class="env-btn" data-env="volcanic"><span class="env-icon">🌋</span><div><div>Volcanic Region</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Molten star ejecta</div></div></button>
+        <button class="env-btn" data-env="frozen"><span class="env-icon">❄️</span><div><div>Frozen Void</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Sub-zero expanse</div></div></button>
+        <button class="env-btn" data-env="dark-matter"><span class="env-icon">🕳️</span><div><div>Dark Matter Zone</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Unseen forces</div></div></button>
+        <button class="env-btn" data-env="aurora"><span class="env-icon">🌈</span><div><div>Aurora Space</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Magnetic light shows</div></div></button>
+        <button class="env-btn" data-env="mixed"><span class="env-icon">🎲</span><div><div>Mixed Random</div><div style="font-size:10px;opacity:0.6;margin-top:2px">Surprises await</div></div></button>
+      </div>
+    </div>
+
+    <button class="launch-btn" id="launch-btn" onclick="launchVoyage()">⚡ INITIATE VOYAGE</button>
+  </div>
+</div>
+
+<!-- VOYAGE SCREEN -->
+<div id="voyage-screen">
+  <canvas id="space-canvas"></canvas>
+
+  <div id="cockpit">
+    <div class="cockpit-window-frame">
+      <div class="scanlines"></div>
+      <div class="window-vignette"></div>
+      <div class="glass-reflection"></div>
+      <div class="glass-scratches"></div>
+      <div class="window-edge-glow"></div>
+    </div>
+    <div class="frame-top"></div>
+    <div class="frame-bottom"></div>
+    <div class="frame-left"></div>
+    <div class="frame-right"></div>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <div class="ship-name">C.S.V. ODYSSEY</div>
+        <div class="top-divider"></div>
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <div class="status-text">VOYAGE ACTIVE</div>
+        </div>
+        <div class="top-divider"></div>
+        <div class="toolbar-btns">
+          <!-- Sound button -->
+          <button class="toolbar-btn" id="btn-sound" onclick="togglePanel('sound')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+            </svg>
+            SOUND
+          </button>
+          <!-- Settings button -->
+          <button class="toolbar-btn" id="btn-settings" onclick="togglePanel('settings')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            SETTINGS
+          </button>
+        </div>
+      </div>
+
+      <div class="top-bar-center">
+        <div class="environment-label">Current Region</div>
+        <div class="environment-name" id="env-display-name">Nebula Fields</div>
+      </div>
+
+      <div class="top-bar-right">
+        <div class="real-clock" id="real-clock">00:00:00</div>
+        <button class="end-btn" onclick="endVoyage()">END SESSION</button>
+      </div>
+    </div>
+
+    <!-- SOUND PANEL -->
+    <div class="floating-panel" id="sound-panel">
+      <div class="fp-header">
+        <div class="fp-title">
+          <svg style="width:10px;height:10px;margin-right:6px;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          Sound Control
+        </div>
+        <button class="fp-close" onclick="closePanel('sound')">✕</button>
+      </div>
+      <div class="fp-body">
+        <!-- Master volume -->
+        <div class="master-row">
+          <span class="master-label">MASTER VOL</span>
+          <input type="range" class="master-vol-bar" id="master-vol" min="0" max="100" value="70" oninput="setMasterVol(this.value)">
+          <span class="sound-vol-pct" id="master-vol-pct">70%</span>
+        </div>
+
+        <!-- ROCKET sounds -->
+        <div class="sound-section-label">🚀 Rocket & Ship</div>
+        <div id="sound-rows-rocket"></div>
+
+        <!-- SPACE sounds -->
+        <div class="sound-section-label" style="margin-top:14px">🌌 Space Ambiance</div>
+        <div id="sound-rows-space"></div>
+
+        <!-- STUDY sounds -->
+        <div class="sound-section-label" style="margin-top:14px">📚 Focus & Study</div>
+        <div id="sound-rows-study"></div>
+
+        <!-- Spotify -->
+        <div class="spotify-row">
+          <div class="sound-section-label">🎵 Spotify Now Playing</div>
+          <div id="spotify-widget">
+            <div class="spotify-bar" id="spotify-bar">
+              <span class="spotify-icon">🎵</span>
+              <div class="spotify-info">
+                <div class="spotify-status-text" id="spotify-status">Connect Spotify to show current track</div>
+              </div>
+              <button class="spotify-connect-btn" id="spotify-btn" onclick="connectSpotify()">CONNECT</button>
+            </div>
+            <div id="spotify-vol-row" style="display:none; margin-top:8px;">
+              <div class="sound-row">
+                <span class="sound-label">Spotify Volume</span>
+                <div class="sound-slider-wrap">
+                  <input type="range" class="sound-vol-bar" id="spotify-vol" min="0" max="100" value="80" oninput="setSpotifyVol(this.value)">
+                  <span class="sound-vol-pct" id="spotify-vol-pct">80%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="floating-panel" id="settings-panel">
+      <div class="fp-header">
+        <div class="fp-title">
+          <svg style="width:10px;height:10px;margin-right:6px;vertical-align:middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Mission Settings
+        </div>
+        <button class="fp-close" onclick="closePanel('settings')">✕</button>
+      </div>
+      <div class="fp-body">
+        <div class="settings-divider">Session</div>
+        <div class="setting-row">
+          <span class="setting-label">Show planet notifications</span>
+          <div class="hud-toggle on" id="tog-planets" onclick="toggleSetting('planets', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Show study tips panel</span>
+          <div class="hud-toggle on" id="tog-tips" onclick="toggleSetting('tips', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Ship shake effect</span>
+          <div class="hud-toggle on" id="tog-shake" onclick="toggleSetting('shake', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Warp flash on planet pass</span>
+          <div class="hud-toggle" id="tog-warp" onclick="toggleSetting('warp', this)"></div>
+        </div>
+
+        <div class="settings-divider">Visual</div>
+        <div class="setting-row">
+          <span class="setting-label">Scanline effect</span>
+          <div class="hud-toggle on" id="tog-scanlines" onclick="toggleSetting('scanlines', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Glass reflection overlay</span>
+          <div class="hud-toggle on" id="tog-glass" onclick="toggleSetting('glass', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Window vignette</span>
+          <div class="hud-toggle on" id="tog-vignette" onclick="toggleSetting('vignette', this)"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Nebula glow</span>
+          <div class="hud-toggle on" id="tog-nebula" onclick="toggleSetting('nebula', this)"></div>
+        </div>
+
+        <div class="settings-divider">Navigation</div>
+        <div class="setting-row">
+          <span class="setting-label">Tip refresh rate</span>
+          <select class="setting-select" onchange="setTipRate(this.value)">
+            <option value="10">Every 10s</option>
+            <option value="18" selected>Every 18s</option>
+            <option value="30">Every 30s</option>
+            <option value="60">Every minute</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Planet spawn rate</span>
+          <select class="setting-select" id="planet-rate" onchange="setPlanetRate(this.value)">
+            <option value="fast">Fast</option>
+            <option value="normal" selected>Normal</option>
+            <option value="slow">Slow</option>
+            <option value="rare">Very Rare</option>
+          </select>
+        </div>
+
+        <div class="settings-divider">Environment</div>
+        <div class="setting-row">
+          <span class="setting-label">Current environment</span>
+          <span style="font-family:var(--font-hud);font-size:10px;color:var(--theme-accent)" id="current-env-label">Nebula Fields</span>
+        </div>
+        <div class="setting-row" style="margin-top:6px;">
+          <span class="setting-label" style="font-size:10px;opacity:0.5">Change environment on setup screen</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <div class="hud-widget">
+        <div class="hud-widget-title">Voyage Progress</div>
+        <div class="progress-pct" id="progress-pct">0%</div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-bar"></div></div>
+        <div class="progress-label" id="progress-label">Beginning journey...</div>
+      </div>
+      <div class="hud-widget">
+        <div class="hud-widget-title">Time Remaining</div>
+        <div class="time-remaining-value" id="time-remaining">—:——</div>
+        <div class="time-elapsed-value" id="time-elapsed">Elapsed: 0:00</div>
+      </div>
+      <div class="hud-widget">
+        <div class="hud-widget-title">Ship Velocity</div>
+        <div class="velocity-bars" id="vel-bars">
+          <div class="vel-bar active" style="height:40%"></div>
+          <div class="vel-bar active" style="height:60%"></div>
+          <div class="vel-bar active" style="height:80%"></div>
+          <div class="vel-bar active" style="height:65%"></div>
+          <div class="vel-bar active" style="height:90%"></div>
+          <div class="vel-bar active" style="height:75%"></div>
+          <div class="vel-bar active" style="height:55%"></div>
+          <div class="vel-bar" style="height:30%"></div>
+        </div>
+        <div class="velocity-value">0.42c — CRUISE</div>
+      </div>
+      <div class="hud-widget">
+        <div class="hud-widget-title">Worlds Discovered</div>
+        <div class="planets-count" id="planets-count">0</div>
+        <div class="planets-label">unique planets passed</div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <div class="hud-widget" style="flex:1;display:flex;flex-direction:column;" id="tips-widget">
+        <div class="hud-widget-title">Study Insight</div>
+        <div class="tip-text" id="tip-text">Loading your first insight...</div>
+        <div class="tip-source" id="tip-source">▸ FOCUS SYSTEM</div>
+      </div>
+      <div class="hud-widget">
+        <div class="hud-widget-title">Ship Systems</div>
+        <div class="switch-row">
+          <div class="switch-item"><div class="switch-item-label">Life Support</div><div class="switch-toggle on"></div></div>
+          <div class="switch-item"><div class="switch-item-label">Nav Array</div><div class="switch-toggle on"></div></div>
+          <div class="switch-item"><div class="switch-item-label">Shields</div><div class="switch-toggle on"></div></div>
+          <div class="switch-item"><div class="switch-item-label">Warp Drive</div><div class="switch-toggle on"></div></div>
+          <div class="switch-item"><div class="switch-item-label">Autopilot</div><div class="switch-toggle on"></div></div>
+        </div>
+      </div>
+      <div class="hud-widget">
+        <div class="hud-widget-title">Environment Scan</div>
+        <div class="gauge-row">
+          <div class="mini-gauge">
+            <svg class="gauge-ring" viewBox="0 0 44 44">
+              <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(0,212,255,0.1)" stroke-width="3"/>
+              <circle cx="22" cy="22" r="18" fill="none" stroke="var(--hud-cyan)" stroke-width="3" stroke-dasharray="70 43" stroke-dashoffset="28" stroke-linecap="round" transform="rotate(-90 22 22)"/>
+              <text x="22" y="26" text-anchor="middle" fill="var(--hud-cyan)" font-family="Orbitron" font-size="9">72%</text>
+            </svg>
+            <div class="gauge-label">TEMP</div>
+          </div>
+          <div class="mini-gauge">
+            <svg class="gauge-ring" viewBox="0 0 44 44">
+              <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,170,0,0.1)" stroke-width="3"/>
+              <circle cx="22" cy="22" r="18" fill="none" stroke="var(--hud-amber)" stroke-width="3" stroke-dasharray="55 58" stroke-dashoffset="28" stroke-linecap="round" transform="rotate(-90 22 22)"/>
+              <text x="22" y="26" text-anchor="middle" fill="var(--hud-amber)" font-family="Orbitron" font-size="9">48%</text>
+            </svg>
+            <div class="gauge-label">DENSITY</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM BAR -->
+    <div class="bottom-bar">
+      <div class="bottom-left">
+        <div class="speaker-grill">
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+        </div>
+        <div class="deco-btn-group">
+          <div class="deco-btn"><div class="btn-led" style="background:var(--hud-green);box-shadow:0 0 4px var(--hud-green)"></div><div class="btn-text">MAIN ENGINE</div></div>
+          <div class="deco-btn"><div class="btn-led" style="background:var(--hud-cyan);box-shadow:0 0 4px var(--hud-cyan)"></div><div class="btn-text">WARP COILS</div></div>
+          <div class="deco-btn"><div class="btn-led" style="background:var(--hud-amber);box-shadow:0 0 4px var(--hud-amber)"></div><div class="btn-text">HULL INTEGRITY</div></div>
+        </div>
+      </div>
+      <div class="bottom-center">
+        <div class="coord-display">
+          <div class="coord-label">Galactic Position</div>
+          <div class="coord-value" id="coord-value">X:+2847.3 Y:-0391.7 Z:+1203.5</div>
+        </div>
+        <div style="display:flex;gap:16px;align-items:center">
+          <div class="nav-light red"></div>
+          <div style="font-family:var(--font-hud);font-size:9px;color:var(--text-dim);letter-spacing:2px">C.S.V. ODYSSEY</div>
+          <div class="nav-light green"></div>
+        </div>
+      </div>
+      <div class="bottom-right">
+        <div class="deco-btn-group">
+          <div class="deco-btn"><div class="btn-led" style="background:var(--hud-cyan);box-shadow:0 0 4px var(--hud-cyan)"></div><div class="btn-text">SENSORS ONLINE</div></div>
+          <div class="deco-btn"><div class="btn-led" style="background:var(--hud-green);box-shadow:0 0 4px var(--hud-green)"></div><div class="btn-text">COMMS ACTIVE</div></div>
+          <div class="deco-btn"><div class="btn-led" style="background:rgba(255,80,80,0.6)"></div><div class="btn-text">WEAPONS OFFLINE</div></div>
+        </div>
+        <div class="speaker-grill">
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+          <div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div><div class="grill-dot"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="planet-notify">◈ APPROACHING UNCHARTED WORLD</div>
+  <div id="warp-overlay"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+const state = {
+  selectedMinutes: 30,
+  selectedEnv: 'nebula',
+  startTime: null,
+  totalSeconds: 0,
+  elapsed: 0,
+  running: false,
+  planetsVisited: 0,
+  tipInterval: null,
+  clockInterval: null,
+  animFrame: null,
+  planets: [],
+  particles: [],
+  stars: [],
+  asteroids: [],
+  shipShake: { x: 0, y: 0 },
+  coords: { x: 2847.3, y: -391.7, z: 1203.5 },
+};
+
+// Settings state
+const settings = {
+  planets: true,
+  tips: true,
+  shake: true,
+  warp: false,
+  scanlines: true,
+  glass: true,
+  vignette: true,
+  nebula: true,
+  tipRate: 18000,
+  planetRate: 'normal',
+};
+
+// ══════════════════════════════════════════
+//  THEME ACCENT COLORS PER ENVIRONMENT
+// ══════════════════════════════════════════
+const ENV_ACCENTS = {
+  'nebula':       { accent: '#9955ff', dim: 'rgba(153,85,255,0.25)', glow: 'rgba(153,85,255,0.15)' },
+  'cosmic-rain':  { accent: '#00aaff', dim: 'rgba(0,170,255,0.25)',  glow: 'rgba(0,170,255,0.15)' },
+  'dust':         { accent: '#cc7722', dim: 'rgba(204,119,34,0.25)', glow: 'rgba(204,119,34,0.15)' },
+  'asteroids':    { accent: '#aaaaaa', dim: 'rgba(170,170,170,0.2)', glow: 'rgba(170,170,170,0.1)' },
+  'crystal':      { accent: '#00ddff', dim: 'rgba(0,221,255,0.25)',  glow: 'rgba(0,221,255,0.15)' },
+  'volcanic':     { accent: '#ff5500', dim: 'rgba(255,85,0,0.25)',   glow: 'rgba(255,85,0,0.15)' },
+  'frozen':       { accent: '#99ccff', dim: 'rgba(153,204,255,0.25)',glow: 'rgba(153,204,255,0.15)' },
+  'dark-matter':  { accent: '#aa44ff', dim: 'rgba(170,68,255,0.25)', glow: 'rgba(170,68,255,0.15)' },
+  'aurora':       { accent: '#00ff99', dim: 'rgba(0,255,153,0.25)',  glow: 'rgba(0,255,153,0.15)' },
+  'mixed':        { accent: '#ffaa00', dim: 'rgba(255,170,0,0.25)',  glow: 'rgba(255,170,0,0.15)' },
+};
+
+function applyThemeAccent(env) {
+  const t = ENV_ACCENTS[env] || ENV_ACCENTS.nebula;
+  document.documentElement.style.setProperty('--theme-accent', t.accent);
+  document.documentElement.style.setProperty('--theme-accent-dim', t.dim);
+  document.documentElement.style.setProperty('--theme-accent-glow', t.glow);
+}
+
+// ══════════════════════════════════════════
+//  AUDIO ENGINE (Web Audio API)
+// ══════════════════════════════════════════
+let audioCtx = null;
+let masterGain = null;
+let soundNodes = {}; // id -> { gainNode, sources, active, volume }
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.7;
+    masterGain.connect(audioCtx.destination);
+  }
+  return audioCtx;
+}
+
+function resumeAudio() {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// Noise buffer generator
+function makeNoiseBuffer(ctx, duration, type='white') {
+  const sr = ctx.sampleRate;
+  const len = sr * duration;
+  const buf = ctx.createBuffer(1, len, sr);
+  const data = buf.getChannelData(0);
+  if (type === 'white') {
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  } else if (type === 'pink') {
+    let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+    for (let i = 0; i < len; i++) {
+      const w = Math.random() * 2 - 1;
+      b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;
+      b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;
+      b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+      data[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11;
+      b6=w*0.115926;
+    }
+  } else if (type === 'brown') {
+    let last=0;
+    for (let i=0; i<len; i++) {
+      const w = Math.random()*2-1;
+      data[i]=(last+0.02*w)/1.02; last=data[i]; data[i]*=3.5;
+    }
+  }
+  return buf;
+}
+
+// Sound definitions
+const SOUND_DEFS = {
+  rocket: [
+    { id:'engine-rumble',  label:'Engine Rumble',   emoji:'🔊', build: buildEngineRumble },
+    { id:'thruster-hiss',  label:'Thruster Hiss',   emoji:'💨', build: buildThrusterHiss },
+    { id:'warp-hum',       label:'Warp Drive Hum',  emoji:'⚡', build: buildWarpHum },
+    { id:'hull-vibration', label:'Hull Vibration',  emoji:'🛸', build: buildHullVibration },
+  ],
+  space: [
+    { id:'cosmic-hum',     label:'Cosmic Hum',      emoji:'🌌', build: buildCosmicHum },
+    { id:'stellar-wind',   label:'Stellar Wind',    emoji:'💫', build: buildStellarWind },
+    { id:'deep-space',     label:'Deep Space Void', emoji:'🕳️', build: buildDeepSpace },
+    { id:'nebula-pulse',   label:'Nebula Pulse',    emoji:'🌠', build: buildNebulaPulse },
+    { id:'meteor-shower',  label:'Particle Storm',  emoji:'☄️', build: buildMeteorShower },
+    { id:'pulsar-ping',    label:'Pulsar Signals',  emoji:'📡', build: buildPulsarPing },
+  ],
+  study: [
+    { id:'white-noise',    label:'White Noise',     emoji:'📻', build: buildWhiteNoise },
+    { id:'brown-noise',    label:'Brown Noise',     emoji:'🟤', build: buildBrownNoise },
+    { id:'soft-binaural',  label:'Focus Tone',      emoji:'🧠', build: buildFocusTone },
+    { id:'rain-drops',     label:'Cosmic Rain',     emoji:'🌧️', build: buildCosmicRain },
+  ],
+};
+
+// ── Sound builders ──
+
+function buildEngineRumble(ctx, gain) {
+  const buf = makeNoiseBuffer(ctx, 2, 'brown');
+  const src = ctx.createBufferSource();
+  src.buffer = buf; src.loop = true;
+  const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 120; lpf.Q.value = 2;
+  const hpf = ctx.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = 30;
+  // LFO for rumble
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 8;
+  const lfoGain = ctx.createGain(); lfoGain.gain.value = 0.3;
+  lfo.connect(lfoGain); lfoGain.connect(lpf.frequency);
+  src.connect(hpf); hpf.connect(lpf); lpf.connect(gain);
+  src.start(); lfo.start();
+  return { sources: [src, lfo] };
+}
+
+function buildThrusterHiss(ctx, gain) {
+  const buf = makeNoiseBuffer(ctx, 3, 'white');
+  const src = ctx.createBufferSource();
+  src.buffer = buf; src.loop = true;
+  const bpf = ctx.createBiquadFilter(); bpf.type = 'bandpass'; bpf.frequency.value = 4000; bpf.Q.value = 0.5;
+  const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 8000;
+  src.connect(bpf); bpf.connect(lpf); lpf.connect(gain);
+  src.start();
+  return { sources: [src] };
+}
+
+function buildWarpHum(ctx, gain) {
+  const osc1 = ctx.createOscillator(); osc1.type = 'sawtooth'; osc1.frequency.value = 55;
+  const osc2 = ctx.createOscillator(); osc2.type = 'sawtooth'; osc2.frequency.value = 55.3;
+  const osc3 = ctx.createOscillator(); osc3.type = 'sine'; osc3.frequency.value = 110;
+  const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 600;
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 0.3;
+  const lfoGain = ctx.createGain(); lfoGain.gain.value = 20;
+  lfo.connect(lfoGain); lfoGain.connect(osc1.frequency);
+  [osc1, osc2, osc3].forEach(o => o.connect(lpf));
+  lpf.connect(gain);
+  [osc1, osc2, osc3, lfo].forEach(o => o.start());
+  return { sources: [osc1, osc2, osc3, lfo] };
+}
+
+function buildHullVibration(ctx, gain) {
+  const buf = makeNoiseBuffer(ctx, 2, 'pink');
+  const src = ctx.createBufferSource();
+  src.buffer = buf; src.loop = true;
+  const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 200;
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 3;
+  const lfoGain = ctx.createGain(); lfoGain.gain.value = 0.4;
+  lfo.connect(lfoGain); lfoGain.connect(gain.gain);
+  src.connect(lpf); lpf.connect(gain);
+  src.start(); lfo.start();
+  return { sources: [src, lfo] };
+}
+
+function buildCosmicHum(ctx, gain) {
+  const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 40;
+  const osc2 = ctx.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = 80;
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 0.05;
+  const lfoG = ctx.createGain(); lfoG.gain.value = 15;
+  lfo.connect(lfoG); lfoG.connect(osc.frequency);
+  const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 300;
+  osc.connect(lpf); osc2.connect(lpf); lpf.connect(gain);
+  [osc, osc2, lfo].forEach(o => o.start());
+  return { sources: [osc, osc2, lfo] };
+}
+
+function buildStellarWind(ctx, gain) {
+  const buf = makeNoiseBuffer(ctx, 4, 'pink');
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 800;
+  const hpf = ctx.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = 100;
+  // Slow sweep LFO
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 0.07;
+  const lfoG = ctx.createGain(); lfoG.gain.value = 300;
+  lfo.connect(lfoG); lfoG.connect(lpf.frequency);
+  src.connect(hpf); hpf.connect(lpf); lpf.connect(gain);
+  src.start(); lfo.start();
+  return { sources: [src, lfo] };
+}
+
+function buildDeepSpace(ctx, gain) {
+  const buf = makeNoiseBuffer(ctx, 8, 'brown');
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 60;
+  src.connect(lpf); lpf.connect(gain);
+  src.start();
+  return { sources: [src] };
+}
+
+function buildNebulaPulse(ctx, gain) {
+  const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = 60;
+  const osc2 = ctx.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = 90;
+  const ampLfo = ctx.createOscillator(); ampLfo.frequency.value = 0.15;
+  const ampG = ctx.createGain(); ampG.gain.value = 0.4;
+  ampLfo.connect(ampG); ampG.connect(gain.gain);
+  osc.connect(gain); osc2.connect(gain);
+  [osc, osc2, ampLfo].forEach(o => o.start());
+  return { sources: [osc, osc2, ampLfo] };
+}
+
+function buildMeteorShower(ctx, gain) {
+  const buf = makeNoiseBuffer(ctx, 2, 'white');
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  const hpf = ctx.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = 2000;
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 0.25;
+  const lfoG = ctx.createGain(); lfoG.gain.value = 0.5;
+  lfo.connect(lfoG); lfoG.connect(gain.gain);
+  src.connect(hpf); hpf.connect(gain);
+  src.start(); lfo.start();
+  return { sources: [src, lfo] };
+}
+
+function buildPulsarPing(ctx, gain) {
+  // Periodic pings using oscillator scheduling
+  let pingInterval;
+  const osc = ctx.createOscillator();
+  osc.type = 'sine'; osc.frequency.value = 880;
+  const env = ctx.createGain(); env.gain.value = 0;
+  osc.connect(env); env.connect(gain);
+  osc.start();
+
+  function doPing() {
+    const now = ctx.currentTime;
+    env.gain.cancelScheduledValues(now);
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(1, now + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+    env.gain.setValueAtTime(0, now + 0.81);
+  }
+  doPing();
+  pingInterval = setInterval(doPing, 2200 + Math.random() * 3000);
+
+  return { sources: [osc], cleanup: () => clearInterval(pingInterval) };
+}
+
+function buildWhiteNoise(ctx, gain) {
+  const buf = makeNoiseBuffer(ctx, 5, 'white');
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  src.connect(gain); src.start();
+  return { sources: [src] };
+}
+
+function buildBrownNoise(ctx, gain) {
+  const buf = makeNoiseBuffer(ctx, 5, 'brown');
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  src.connect(gain); src.start();
+  return { sources: [src] };
+}
+
+function buildFocusTone(ctx, gain) {
+  // 40Hz binaural-style beat: left 200Hz, right 240Hz (both summed for stereo-like in mono)
+  const osc1 = ctx.createOscillator(); osc1.type = 'sine'; osc1.frequency.value = 200;
+  const osc2 = ctx.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = 240;
+  const g1 = ctx.createGain(); g1.gain.value = 0.5;
+  const g2 = ctx.createGain(); g2.gain.value = 0.5;
+  osc1.connect(g1); osc2.connect(g2);
+  g1.connect(gain); g2.connect(gain);
+  [osc1, osc2].forEach(o => o.start());
+  return { sources: [osc1, osc2] };
+}
+
+function buildCosmicRain(ctx, gain) {
+  const buf = makeNoiseBuffer(ctx, 4, 'pink');
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  const bpf = ctx.createBiquadFilter(); bpf.type = 'bandpass'; bpf.frequency.value = 1200; bpf.Q.value = 0.8;
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 0.4;
+  const lfoG = ctx.createGain(); lfoG.gain.value = 400;
+  lfo.connect(lfoG); lfoG.connect(bpf.frequency);
+  src.connect(bpf); bpf.connect(gain);
+  src.start(); lfo.start();
+  return { sources: [src, lfo] };
+}
+
+// ── Sound management ──
+
+function startSound(id, buildFn) {
+  const ctx = getAudioCtx();
+  resumeAudio();
+  if (soundNodes[id]) return; // already running
+  const gainNode = ctx.createGain();
+  gainNode.gain.value = (soundVolumes[id] || 40) / 100 * 0.4; // scale down to avoid clipping
+  gainNode.connect(masterGain);
+  const built = buildFn(ctx, gainNode);
+  soundNodes[id] = { gainNode, sources: built.sources || [], cleanup: built.cleanup || null, active: true };
+}
+
+function stopSound(id) {
+  const n = soundNodes[id];
+  if (!n) return;
+  try {
+    n.sources.forEach(s => { try { s.stop(); } catch(e){} });
+    if (n.cleanup) n.cleanup();
+    n.gainNode.disconnect();
+  } catch(e){}
+  delete soundNodes[id];
+}
+
+function setSoundVolume(id, vol) {
+  soundVolumes[id] = vol;
+  if (soundNodes[id]) {
+    soundNodes[id].gainNode.gain.value = vol / 100 * 0.4;
+  }
+}
+
+function setMasterVol(v) {
+  document.getElementById('master-vol-pct').textContent = v + '%';
+  if (masterGain) masterGain.gain.value = v / 100;
+}
+
+// Volume state
+const soundVolumes = {};
+const soundActive = {};
+
+// ══════════════════════════════════════════
+//  BUILD SOUND PANEL UI
+// ══════════════════════════════════════════
+function buildSoundUI() {
+  ['rocket','space','study'].forEach(cat => {
+    const container = document.getElementById(`sound-rows-${cat}`);
+    if (!container) return;
+    container.innerHTML = '';
+    SOUND_DEFS[cat].forEach(def => {
+      soundVolumes[def.id] = 40;
+      soundActive[def.id] = false;
+      const row = document.createElement('div');
+      row.className = 'sound-row';
+      row.innerHTML = `
+        <button class="sound-toggle" id="tog-${def.id}" onclick="toggleSound('${def.id}', '${cat}')" title="${def.label}">${def.emoji}</button>
+        <span class="sound-label">${def.label}</span>
+        <div class="sound-slider-wrap">
+          <input type="range" class="sound-vol-bar" id="vol-${def.id}" min="0" max="100" value="40"
+            oninput="onSoundVol('${def.id}', this.value)" style="--track-fill:${ENV_ACCENTS[state.selectedEnv]?.accent || '#00d4ff'}">
+          <span class="sound-vol-pct" id="vpct-${def.id}">40%</span>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+  });
+}
+
+function toggleSound(id, cat) {
+  const allDefs = [...SOUND_DEFS.rocket, ...SOUND_DEFS.space, ...SOUND_DEFS.study];
+  const def = allDefs.find(d => d.id === id);
+  if (!def) return;
+  resumeAudio();
+  const btn = document.getElementById(`tog-${id}`);
+  if (soundActive[id]) {
+    stopSound(id);
+    soundActive[id] = false;
+    btn.classList.remove('on');
+  } else {
+    startSound(id, def.build);
+    soundActive[id] = true;
+    btn.classList.add('on');
+  }
+}
+
+function onSoundVol(id, val) {
+  document.getElementById(`vpct-${id}`).textContent = val + '%';
+  setSoundVolume(id, parseInt(val));
+}
+
+// ══════════════════════════════════════════
+//  SPOTIFY INTEGRATION
+// ══════════════════════════════════════════
+let spotifyToken = null;
+let spotifyPollInterval = null;
+
+async function connectSpotify() {
+  // Try to get token from local storage (if user has already set one)
+  const tok = prompt(
+    'Paste your Spotify Web API access token below.\n\n' +
+    'To get one: visit developer.spotify.com → try Web API → get token with user-read-currently-playing scope.',
+    spotifyToken || ''
+  );
+  if (!tok || !tok.trim()) return;
+  spotifyToken = tok.trim();
+  document.getElementById('spotify-btn').textContent = 'CONNECTED';
+  document.getElementById('spotify-btn').style.color = '#1ed660';
+  pollSpotify();
+  spotifyPollInterval = setInterval(pollSpotify, 5000);
+}
+
+async function pollSpotify() {
+  if (!spotifyToken) return;
+  try {
+    const res = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      headers: { 'Authorization': 'Bearer ' + spotifyToken }
+    });
+    if (res.status === 204 || res.status === 200 && res.headers.get('content-length') === '0') {
+      updateSpotifyUI(null, null, false);
+      return;
+    }
+    if (res.status === 401) {
+      updateSpotifyUI(null, null, false, 'Token expired — reconnect');
+      spotifyToken = null;
+      clearInterval(spotifyPollInterval);
+      document.getElementById('spotify-btn').textContent = 'RECONNECT';
+      return;
+    }
+    const data = await res.json();
+    if (data && data.item) {
+      const track = data.item.name;
+      const artist = data.item.artists.map(a => a.name).join(', ');
+      const isPlaying = data.is_playing;
+      updateSpotifyUI(track, artist, isPlaying);
+    }
+  } catch(e) {
+    // network error or CORS — show helpful message
+    updateSpotifyUI(null, null, false, 'Cannot reach Spotify API from this page');
+  }
+}
+
+function updateSpotifyUI(track, artist, playing, errMsg) {
+  const statusEl = document.getElementById('spotify-status');
+  const bar = document.getElementById('spotify-bar');
+  const volRow = document.getElementById('spotify-vol-row');
+
+  if (errMsg) {
+    statusEl.textContent = errMsg;
+    statusEl.style.color = 'var(--hud-amber)';
+    volRow.style.display = 'none';
+    return;
+  }
+  if (!track) {
+    statusEl.parentElement.innerHTML = `<div class="spotify-status-text" id="spotify-status">Nothing playing</div>`;
+    volRow.style.display = 'none';
+    return;
+  }
+  // Has track
+  bar.innerHTML = `
+    <span class="spotify-icon">${playing ? '▶' : '⏸'}</span>
+    <div class="spotify-info">
+      <div class="spotify-track" id="spotify-track">${track}</div>
+      <div class="spotify-artist" id="spotify-artist">${artist}</div>
+    </div>
+    <button class="spotify-connect-btn" id="spotify-btn" onclick="connectSpotify()">TOKEN</button>
+  `;
+  volRow.style.display = 'block';
+}
+
+function setSpotifyVol(v) {
+  document.getElementById('spotify-vol-pct').textContent = v + '%';
+  // Spotify volume control via API
+  if (spotifyToken) {
+    fetch(`https://api.spotify.com/v1/me/player/volume?volume_percent=${v}`, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + spotifyToken }
+    }).catch(() => {});
+  }
+}
+
+// ══════════════════════════════════════════
+//  PANEL TOGGLE
+// ══════════════════════════════════════════
+function togglePanel(name) {
+  const panel = document.getElementById(`${name}-panel`);
+  const btn = document.getElementById(`btn-${name}`);
+  const other = name === 'sound' ? 'settings' : 'sound';
+  const otherPanel = document.getElementById(`${other}-panel`);
+  const otherBtn = document.getElementById(`btn-${other}`);
+
+  const isOpen = panel.classList.contains('visible');
+
+  // Close both first
+  otherPanel.classList.remove('visible');
+  if (otherBtn) otherBtn.classList.remove('active');
+
+  if (isOpen) {
+    panel.classList.remove('visible');
+    btn.classList.remove('active');
+  } else {
+    panel.classList.add('visible');
+    btn.classList.add('active');
+    if (name === 'sound') resumeAudio();
+  }
+}
+
+function closePanel(name) {
+  const panel = document.getElementById(`${name}-panel`);
+  const btn = document.getElementById(`btn-${name}`);
+  panel.classList.remove('visible');
+  if (btn) btn.classList.remove('active');
+}
+
+// Close panels when clicking outside
+document.addEventListener('click', (e) => {
+  ['sound','settings'].forEach(name => {
+    const panel = document.getElementById(`${name}-panel`);
+    const btn = document.getElementById(`btn-${name}`);
+    if (!panel || !btn) return;
+    if (panel.classList.contains('visible') && !panel.contains(e.target) && !btn.contains(e.target)) {
+      panel.classList.remove('visible');
+      btn.classList.remove('active');
+    }
+  });
+});
+
+// ══════════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════════
+function toggleSetting(key, el) {
+  settings[key] = !settings[key];
+  el.classList.toggle('on', settings[key]);
+  applySetting(key);
+}
+
+function applySetting(key) {
+  const vs = document.getElementById('voyage-screen');
+  if (!vs) return;
+  if (key === 'scanlines') {
+    const sl = vs.querySelector('.scanlines');
+    if (sl) sl.style.display = settings.scanlines ? '' : 'none';
+  }
+  if (key === 'glass') {
+    const gr = vs.querySelector('.glass-reflection');
+    if (gr) gr.style.display = settings.glass ? '' : 'none';
+  }
+  if (key === 'vignette') {
+    const wv = vs.querySelector('.window-vignette');
+    if (wv) wv.style.display = settings.vignette ? '' : 'none';
+  }
+  if (key === 'tips') {
+    const tw = document.getElementById('tips-widget');
+    if (tw) tw.style.display = settings.tips ? '' : 'none';
+  }
+}
+
+function setTipRate(v) {
+  settings.tipRate = parseInt(v) * 1000;
+  if (state.tipInterval) {
+    clearInterval(state.tipInterval);
+    state.tipInterval = setInterval(nextTip, settings.tipRate);
+  }
+}
+
+function setPlanetRate(v) {
+  settings.planetRate = v;
+}
+
+function getPlanetInterval() {
+  const base = { fast: 400, normal: 900, slow: 1600, rare: 3000 };
+  return base[settings.planetRate] || 900;
+}
+
+// ══════════════════════════════════════════
+//  SETUP BACKGROUND STARS
+// ══════════════════════════════════════════
+function initSetupStars() {
+  const c = document.getElementById('bg-stars');
+  const ctx = c.getContext('2d');
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  const stars = Array.from({length: 200}, () => ({
+    x: Math.random() * c.width, y: Math.random() * c.height,
+    r: Math.random() * 1.2 + 0.2, a: Math.random(),
+    da: (Math.random() - 0.5) * 0.005
+  }));
+  function draw() {
+    ctx.clearRect(0,0,c.width,c.height);
+    stars.forEach(s => {
+      s.a = Math.max(0.1, Math.min(1, s.a + s.da));
+      if (s.a <= 0.1 || s.a >= 1) s.da *= -1;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(200,220,255,${s.a * 0.7})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+initSetupStars();
+
+// ══════════════════════════════════════════
+//  SETUP INTERACTIONS
+// ══════════════════════════════════════════
+document.querySelectorAll('.duration-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.selectedMinutes = parseInt(btn.dataset.minutes);
+  });
+});
+
+const envColors = {
+  'nebula': ['#2d0a5e','#0a1a5e','#5e0a3a'], 'cosmic-rain': ['#001428','#00284a','#003c6e'],
+  'dust': ['#2a1a08','#1a0f05','#3d2510'], 'asteroids': ['#1a1a1a','#0d0d0d','#252525'],
+  'crystal': ['#001a2e','#00142a','#0a2a3e'], 'volcanic': ['#2e0800','#1a0500','#3d1000'],
+  'frozen': ['#001e2e','#00152a','#0a2040'], 'dark-matter': ['#050508','#030305','#0a0a10'],
+  'aurora': ['#001a0a','#001a15','#001a20'], 'mixed': ['#0a0a1a','#1a0a1a','#0a1a0a'],
+};
+document.querySelectorAll('.env-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.env-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.selectedEnv = btn.dataset.env;
+    const cols = envColors[state.selectedEnv] || envColors.nebula;
+    document.getElementById('setup-screen').style.background =
+      `radial-gradient(ellipse at 50% 40%, ${cols[0]} 0%, ${cols[1]} 50%, #020209 100%)`;
+  });
+});
+
+// ══════════════════════════════════════════
+//  ENVIRONMENT CONFIGS
+// ══════════════════════════════════════════
+const ENV_CONFIG = {
+  'nebula':       { bg: ['#0a0520','#08031a','#050210'], nebula: true, nebulaColors: ['#6622aa','#2244cc','#aa2266'], particleColor: 'rgba(160,100,255,', asteroidDensity: 0 },
+  'cosmic-rain':  { bg: ['#00060f','#000a18','#000510'], nebula: false, nebulaColors: [], particleColor: 'rgba(80,180,255,', asteroidDensity: 0 },
+  'dust':         { bg: ['#12080200','#0c0600','#180c04'], nebula: true, nebulaColors: ['#552200','#331100','#664422'], particleColor: 'rgba(200,140,60,', asteroidDensity: 0 },
+  'asteroids':    { bg: ['#050505','#0a0a0a','#030303'], nebula: false, nebulaColors: [], particleColor: 'rgba(150,120,80,', asteroidDensity: 12 },
+  'crystal':      { bg: ['#000f1a','#000a14','#00121f'], nebula: true, nebulaColors: ['#004499','#0077aa','#0099cc'], particleColor: 'rgba(100,220,255,', asteroidDensity: 0 },
+  'volcanic':     { bg: ['#0a0200','#060100','#0f0300'], nebula: true, nebulaColors: ['#660000','#992200','#cc3300'], particleColor: 'rgba(255,80,0,', asteroidDensity: 0 },
+  'frozen':       { bg: ['#010810','#00050c','#010c18'], nebula: true, nebulaColors: ['#003355','#004466','#002244'], particleColor: 'rgba(180,220,255,', asteroidDensity: 0 },
+  'dark-matter':  { bg: ['#030303','#020202','#040404'], nebula: false, nebulaColors: [], particleColor: 'rgba(80,0,120,', asteroidDensity: 0 },
+  'aurora':       { bg: ['#000a05','#000f08','#000a0a'], nebula: true, nebulaColors: ['#003322','#004433','#006655'], particleColor: 'rgba(0,255,150,', asteroidDensity: 0 },
+  'mixed':        { bg: ['#070712','#060610','#08080f'], nebula: true, nebulaColors: ['#441166','#116644','#664411'], particleColor: 'rgba(200,200,200,', asteroidDensity: 4 },
+};
+const ENV_NAMES = {
+  'nebula':'Nebula Fields','cosmic-rain':'Cosmic Rain','dust':'Dust Clouds',
+  'asteroids':'Asteroid Belt','crystal':'Crystal Space','volcanic':'Volcanic Region',
+  'frozen':'Frozen Void','dark-matter':'Dark Matter Zone','aurora':'Aurora Space','mixed':'Mixed Environment'
+};
+
+// ══════════════════════════════════════════
+//  TIPS
+// ══════════════════════════════════════════
+const TIPS = [
+  { text: "The Pomodoro Technique suggests working in 25-minute sprints with short breaks to maintain peak focus.", src: "PRODUCTIVITY" },
+  { text: "Your brain consolidates memories during rest. Brief micro-breaks between study blocks enhance retention.", src: "NEUROSCIENCE" },
+  { text: "Active recall — testing yourself rather than re-reading — produces far stronger memory traces.", src: "COGNITIVE SCIENCE" },
+  { text: "\"A journey of a thousand miles begins with a single step.\"", src: "LAO TZU" },
+  { text: "Spaced repetition: reviewing material at increasing intervals dramatically reduces forgetting over time.", src: "MEMORY RESEARCH" },
+  { text: "\"The more that you read, the more things you will know.\"", src: "DR. SEUSS" },
+  { text: "Interleaving different subjects during a session improves long-term learning compared to blocking.", src: "LEARNING SCIENCE" },
+  { text: "\"Somewhere, something incredible is waiting to be known.\"", src: "SHARON BEGLEY" },
+  { text: "Writing by hand engages deeper cognitive processing than typing — ideal for understanding complex concepts.", src: "MOTOR LEARNING" },
+  { text: "\"The cosmos is within us. We are made of star-stuff.\"", src: "CARL SAGAN" },
+  { text: "Sleeping after learning a new skill consolidates the neural pathways formed during practice.", src: "SLEEP RESEARCH" },
+  { text: "\"An investment in knowledge pays the best interest.\"", src: "BENJAMIN FRANKLIN" },
+  { text: "Background music in 60-70 BPM range can boost study efficiency by synchronizing with resting heart rate.", src: "BINAURAL STUDIES" },
+  { text: "Teaching what you've learned to someone else reveals gaps in understanding and cements knowledge.", src: "FEYNMAN TECHNIQUE" },
+  { text: "Drinking water during study sessions maintains cognitive performance. Even mild dehydration impairs focus.", src: "HYDRATION SCIENCE" },
+  { text: "Setting specific, measurable learning goals before each session increases completion rates significantly.", src: "GOAL THEORY" },
+];
+
+function nextTip() {
+  const tip = TIPS[Math.floor(Math.random() * TIPS.length)];
+  const el = document.getElementById('tip-text');
+  if (!el) return;
+  const src = document.getElementById('tip-source');
+  el.style.opacity = 0;
+  setTimeout(() => {
+    el.textContent = tip.text;
+    if (src) src.textContent = `▸ ${tip.src}`;
+    el.style.opacity = 1;
+  }, 400);
+}
+
+// ══════════════════════════════════════════
+//  PLANET GENERATION
+// ══════════════════════════════════════════
+const PLANET_NAMES = ['Kepler','Vega','Astra','Proxima','Lyra','Cygnus','Orion','Draco','Perseus','Andromeda','Tau','Zeta','Helios','Solus','Nyx','Erebus','Phoebe','Titan','Aether','Kronos'];
+const PLANET_SUFFIXES = ['Prime','II','III','IV','Minor','Major','Alpha','Beta','Sigma','-7','-12','-9b','Nova','Ultima'];
+let planetIdCounter = 1;
+
+function generatePlanet(canvas, env) {
+  const cfg = ENV_CONFIG[env] || ENV_CONFIG.nebula;
+  const side = Math.random() > 0.5 ? 1 : -1;
+  const r = 40 + Math.random() * 120;
+  const x = canvas.width/2 + side * (canvas.width * 0.25 + Math.random() * canvas.width * 0.2);
+  const y = canvas.height * 0.2 + Math.random() * canvas.height * 0.5;
+  const speed = 0.3 + Math.random() * 0.4;
+  const palettes = {
+    nebula: [['#7722cc','#aa44ee','#cc88ff'],['#224499','#4466bb','#88aaff'],['#993366','#cc55aa','#ff99dd']],
+    'cosmic-rain': [['#0055aa','#0077cc','#aaccff'],['#004488','#0066aa','#88bbff']],
+    dust: [['#aa5500','#cc7722','#ffbb66'],['#886633','#aa8844','#ddbb88']],
+    asteroids: [['#555555','#888888','#aaaaaa'],['#443322','#665544','#998877']],
+    crystal: [['#0088cc','#00aaee','#aaeeff'],['#005588','#0077aa','#88ccff']],
+    volcanic: [['#cc2200','#ee5500','#ffaa44'],['#881100','#aa3300','#dd7722']],
+    frozen: [['#aaccee','#ccddff','#eef4ff'],['#7799cc','#99bbdd','#ccddff']],
+    'dark-matter': [['#220044','#330066','#6600aa'],['#110022','#220033','#440066']],
+    aurora: [['#00cc66','#00ee88','#aaffcc'],['#00aa44','#00cc66','#88ffaa']],
+    mixed: [['#6644aa','#aa6622','#44aa66']],
+  };
+  const envPal = palettes[env] || palettes.nebula;
+  const colors = envPal[Math.floor(Math.random() * envPal.length)];
+  const hasRings = Math.random() > 0.55;
+  const hasMoons = Math.random() > 0.5 ? Math.floor(Math.random() * 3) : 0;
+  const hasAtmosphere = Math.random() > 0.3;
+  const rotation = Math.random() * Math.PI * 2;
+  const name = `${PLANET_NAMES[Math.floor(Math.random()*PLANET_NAMES.length)]} ${PLANET_SUFFIXES[Math.floor(Math.random()*PLANET_SUFFIXES.length)]}`;
+  const terrainType = Math.floor(Math.random() * 5);
+  const cloudCover = Math.random();
+  const moonAngles = Array.from({length: hasMoons}, () => Math.random() * Math.PI * 2);
+  return { x, y, r, speed, colors, hasRings, hasMoons, hasAtmosphere, rotation, name, terrainType, cloudCover, moonAngles, id: planetIdCounter++, notified: false, passed: false };
+}
+
+function drawPlanet(ctx, planet, tick) {
+  const { x, y, r, colors, hasRings, hasMoons, hasAtmosphere, rotation, terrainType, cloudCover, moonAngles } = planet;
+  ctx.save();
+  if (hasRings) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rotation * 0.3);
+    const ringA = r * 1.4, ringB = r * 0.25;
+    ctx.beginPath(); ctx.ellipse(0, 0, ringA, ringB, 0, 0, Math.PI*2);
+    ctx.strokeStyle = colors[1] + '99'; ctx.lineWidth = r * 0.18; ctx.globalAlpha = 0.45;
+    ctx.stroke(); ctx.globalAlpha = 1; ctx.restore();
+  }
+  const bodyGrad = ctx.createRadialGradient(x - r*0.3, y - r*0.3, r*0.05, x, y, r);
+  bodyGrad.addColorStop(0, colors[2] || '#ffffff');
+  bodyGrad.addColorStop(0.4, colors[1]);
+  bodyGrad.addColorStop(1, colors[0]);
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fillStyle = bodyGrad; ctx.fill();
+  ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.clip();
+  if (terrainType === 1) {
+    for (let i = -r; i < r; i += r*0.18) { ctx.fillStyle = `rgba(0,0,0,${0.1 + Math.random()*0.12})`; ctx.fillRect(x-r, y+i, r*2, r*0.1); }
+  } else if (terrainType === 2) {
+    for (let s = 0; s < 5; s++) {
+      const sx = x + (Math.random()-0.5)*r, sy = y + (Math.random()-0.5)*r;
+      const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, r*0.4);
+      sg.addColorStop(0, `rgba(255,255,255,0.08)`); sg.addColorStop(1, 'transparent');
+      ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, r*0.4, 0, Math.PI*2); ctx.fill();
+    }
+  } else if (terrainType === 3) {
+    for (let p = 0; p < 8; p++) {
+      const px = x + (Math.random()-0.5)*r*1.5, py = y + (Math.random()-0.5)*r*1.5;
+      ctx.fillStyle = `rgba(0,0,0,0.15)`; ctx.beginPath(); ctx.arc(px, py, r*(0.1+Math.random()*0.2), 0, Math.PI*2); ctx.fill();
+    }
+  } else if (terrainType === 4) {
+    const sg = ctx.createRadialGradient(x, y+r*0.2, 0, x, y+r*0.2, r*0.35);
+    sg.addColorStop(0, 'rgba(255,200,100,0.25)'); sg.addColorStop(1, 'transparent');
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(x, y+r*0.2, r*0.35, 0, Math.PI*2); ctx.fill();
+  }
+  if (cloudCover > 0.3) {
+    for (let c = 0; c < 6; c++) {
+      const cx2 = x+(Math.random()-0.5)*r*1.6, cy2 = y+(Math.random()-0.5)*r*1.6, cr = r*(0.12+Math.random()*0.22);
+      ctx.fillStyle = `rgba(255,255,255,${0.04+cloudCover*0.06})`;
+      ctx.beginPath(); ctx.ellipse(cx2, cy2, cr, cr*0.55, Math.random()*Math.PI, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.restore();
+  const shadowGrad = ctx.createRadialGradient(x+r*0.45, y+r*0.1, r*0.1, x, y, r);
+  shadowGrad.addColorStop(0, 'rgba(0,0,0,0)'); shadowGrad.addColorStop(0.6, 'rgba(0,0,0,0.2)'); shadowGrad.addColorStop(1, 'rgba(0,0,0,0.75)');
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = shadowGrad; ctx.fill();
+  if (hasAtmosphere) {
+    const atmGrad = ctx.createRadialGradient(x, y, r*0.9, x, y, r*1.35);
+    atmGrad.addColorStop(0, colors[1] + '44'); atmGrad.addColorStop(1, 'transparent');
+    ctx.beginPath(); ctx.arc(x, y, r*1.35, 0, Math.PI*2);
+    ctx.fillStyle = atmGrad; ctx.globalAlpha = 0.7; ctx.fill(); ctx.globalAlpha = 1;
+  }
+  const specGrad = ctx.createRadialGradient(x-r*0.35, y-r*0.35, 0, x-r*0.35, y-r*0.35, r*0.6);
+  specGrad.addColorStop(0, 'rgba(255,255,255,0.15)'); specGrad.addColorStop(1, 'transparent');
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = specGrad; ctx.fill();
+  if (hasMoons > 0) {
+    moonAngles.forEach((angle, i) => {
+      const moonAngle = angle + tick * (0.001 + i * 0.0005);
+      const orbitR = r * (1.6 + i * 0.5);
+      const moonR = r * (0.1 + i * 0.04);
+      const mx = x + Math.cos(moonAngle) * orbitR;
+      const my = y + Math.sin(moonAngle) * orbitR * 0.4;
+      const mg = ctx.createRadialGradient(mx-moonR*0.3, my-moonR*0.3, 0, mx, my, moonR);
+      mg.addColorStop(0, colors[2] || '#ccc'); mg.addColorStop(1, colors[0]);
+      ctx.beginPath(); ctx.arc(mx, my, moonR, 0, Math.PI*2); ctx.fillStyle = mg; ctx.fill();
+    });
+  }
+  ctx.restore();
+}
+
+function drawNebula(ctx, canvas, cfg, tick) {
+  if (!settings.nebula || !cfg.nebula || !cfg.nebulaColors.length) return;
+  cfg.nebulaColors.forEach((col, i) => {
+    const x = canvas.width * (0.2 + i * 0.3) + Math.sin(tick*0.0003 + i) * 80;
+    const y = canvas.height * (0.3 + i * 0.15) + Math.cos(tick*0.0004 + i*2) * 60;
+    const rx = canvas.width * (0.3 + Math.random()*0.02);
+    const ry = canvas.height * (0.25 + Math.random()*0.02);
+    const grad = ctx.createRadialGradient(x,y,0,x,y,Math.max(rx,ry));
+    const rgb = parseInt(col.slice(1),16);
+    const r2 = (rgb>>16)&0xff, g2 = (rgb>>8)&0xff, b2 = rgb&0xff;
+    grad.addColorStop(0, `rgba(${r2},${g2},${b2},0.18)`);
+    grad.addColorStop(0.5, `rgba(${r2},${g2},${b2},0.08)`);
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, i*0.5, 0, Math.PI*2); ctx.fill();
+  });
+}
+
+// ══════════════════════════════════════════
+//  MAIN RENDERER
+// ══════════════════════════════════════════
+let canvas, ctx, tick = 0, spawnTimer = 0, coordTimer = 0;
+
+function initVoyage() {
+  canvas = document.getElementById('space-canvas');
+  ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+
+  const cfg = ENV_CONFIG[state.selectedEnv] || ENV_CONFIG.nebula;
+  state.stars = Array.from({length: 350}, () => ({
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+    r: Math.pow(Math.random(), 3) * 2.2 + 0.2, a: 0.3 + Math.random() * 0.7,
+    da: (Math.random() - 0.5) * 0.003, speed: 0.1 + Math.random() * 0.3,
+  }));
+  for (let i = 0; i < 80; i++) spawnParticle(cfg);
+  if (cfg.asteroidDensity > 0) for (let i = 0; i < cfg.asteroidDensity; i++) spawnAsteroid();
+  state.planets = [generatePlanet(canvas, state.selectedEnv)];
+
+  applyThemeAccent(state.selectedEnv);
+  document.getElementById('env-display-name').textContent = ENV_NAMES[state.selectedEnv] || state.selectedEnv;
+  const envLabel = document.getElementById('current-env-label');
+  if (envLabel) envLabel.textContent = ENV_NAMES[state.selectedEnv] || state.selectedEnv;
+
+  state.running = true;
+  state.startTime = Date.now();
+  nextTip();
+  state.tipInterval = setInterval(nextTip, settings.tipRate);
+  state.clockInterval = setInterval(updateClock, 1000);
+  loop();
+}
+
+function spawnParticle(cfg) {
+  const pcol = cfg.particleColor || 'rgba(200,200,255,';
+  state.particles.push({
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+    vx: -0.5 - Math.random() * 1.5, vy: (Math.random() - 0.5) * 0.3,
+    r: Math.random() * 2 + 0.5, a: Math.random() * 0.6 + 0.1,
+    col: pcol, life: 1, decay: 0.0008 + Math.random() * 0.001,
+    trail: state.selectedEnv === 'cosmic-rain',
+  });
+}
+
+function spawnAsteroid() {
+  state.asteroids.push({
+    x: canvas.width + 50, y: Math.random() * canvas.height,
+    r: 6 + Math.random() * 20, vx: -(0.4 + Math.random() * 1.2), vy: (Math.random() - 0.5) * 0.5,
+    rot: Math.random() * Math.PI*2, rotSpeed: (Math.random()-0.5)*0.02,
+    sides: 6 + Math.floor(Math.random() * 5),
+    color: `hsl(${30+Math.random()*20}, ${15+Math.random()*20}%, ${30+Math.random()*30}%)`,
+  });
+}
+
+function drawAsteroid(ctx, ast) {
+  ctx.save(); ctx.translate(ast.x, ast.y); ctx.rotate(ast.rot); ctx.beginPath();
+  for (let i = 0; i < ast.sides; i++) {
+    const angle = (i / ast.sides) * Math.PI*2;
+    const rad = ast.r * (0.7 + Math.random()*0.3);
+    i === 0 ? ctx.moveTo(Math.cos(angle)*rad, Math.sin(angle)*rad) : ctx.lineTo(Math.cos(angle)*rad, Math.sin(angle)*rad);
+  }
+  ctx.closePath(); ctx.fillStyle = ast.color; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.restore();
+}
+
+function loop() {
+  if (!state.running) return;
+  tick++;
+  const cfg = ENV_CONFIG[state.selectedEnv] || ENV_CONFIG.nebula;
+  if (settings.shake) {
+    state.shipShake.x = Math.sin(tick * 0.017) * 1.2 + Math.sin(tick * 0.073) * 0.5;
+    state.shipShake.y = Math.cos(tick * 0.023) * 0.8 + Math.cos(tick * 0.051) * 0.4;
+  } else {
+    state.shipShake.x = 0; state.shipShake.y = 0;
+  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const bgc = cfg.bg || ['#050510','#030308','#010106'];
+  const bgGrad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, Math.max(canvas.width,canvas.height)*0.8);
+  bgGrad.addColorStop(0, bgc[0] || '#070714'); bgGrad.addColorStop(0.5, bgc[1] || '#050510'); bgGrad.addColorStop(1, bgc[2] || '#020209');
+  ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  drawNebula(ctx, canvas, cfg, tick);
+  ctx.save(); ctx.translate(state.shipShake.x * 0.3, state.shipShake.y * 0.3);
+  state.stars.forEach(s => {
+    s.x -= s.speed;
+    if (s.x < -5) { s.x = canvas.width + 5; s.y = Math.random() * canvas.height; }
+    s.a = Math.max(0.2, Math.min(1, s.a + s.da));
+    if (s.a <= 0.2 || s.a >= 1) s.da *= -1;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(220,230,255,${s.a})`; ctx.fill();
+    if (s.speed > 0.25) {
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x + s.speed*8, s.y);
+      ctx.strokeStyle = `rgba(220,230,255,${s.a*0.3})`; ctx.lineWidth = s.r*0.5; ctx.stroke();
+    }
+  });
+  ctx.restore();
+  spawnTimer++;
+  if (spawnTimer % 3 === 0 && state.particles.length < 150) spawnParticle(cfg);
+  state.particles = state.particles.filter(p => p.life > 0);
+  state.particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.life -= p.decay;
+    const alpha = p.a * p.life;
+    if (p.trail) {
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx*15, p.y - p.vy*15);
+      ctx.strokeStyle = p.col + alpha + ')'; ctx.lineWidth = p.r; ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = p.col + alpha + ')'; ctx.fill();
+    }
+    if (p.x < -20 || p.x > canvas.width+20) p.life = 0;
+  });
+  if (cfg.asteroidDensity > 0) {
+    if (spawnTimer % 120 === 0 && state.asteroids.length < cfg.asteroidDensity * 2) spawnAsteroid();
+    state.asteroids.forEach(a => { a.x += a.vx; a.y += a.vy; a.rot += a.rotSpeed; drawAsteroid(ctx, a); });
+    state.asteroids = state.asteroids.filter(a => a.x > -100);
+  }
+  ctx.save(); ctx.translate(state.shipShake.x, state.shipShake.y);
+  state.planets.forEach(planet => {
+    planet.x -= planet.speed;
+    drawPlanet(ctx, planet, tick);
+    if (!planet.notified && planet.x < canvas.width * 0.75) {
+      planet.notified = true;
+      state.planetsVisited++;
+      document.getElementById('planets-count').textContent = state.planetsVisited;
+      if (settings.planets) showPlanetNotification(planet.name);
+      if (settings.warp) { const wo = document.getElementById('warp-overlay'); wo.classList.add('active'); setTimeout(() => wo.classList.remove('active'), 400); }
+    }
+    if (planet.x < -planet.r * 3) planet.passed = true;
+  });
+  ctx.restore();
+  state.planets = state.planets.filter(p => !p.passed);
+  const planetInterval = getPlanetInterval();
+  if (spawnTimer % Math.floor(planetInterval) === 0) state.planets.push(generatePlanet(canvas, state.selectedEnv));
+  coordTimer++;
+  if (coordTimer % 60 === 0) {
+    state.coords.x += 0.3 + Math.random() * 0.5;
+    state.coords.y += (Math.random() - 0.5) * 0.2;
+    state.coords.z += 0.15 + Math.random() * 0.3;
+    document.getElementById('coord-value').textContent =
+      `X:+${state.coords.x.toFixed(1).padStart(7)} Y:${state.coords.y > 0 ? '+' : ''}${state.coords.y.toFixed(1).padStart(7)} Z:+${state.coords.z.toFixed(1).padStart(7)}`;
+  }
+  state.animFrame = requestAnimationFrame(loop);
+}
+
+let notifyTimeout = null;
+function showPlanetNotification(name) {
+  const el = document.getElementById('planet-notify');
+  el.textContent = `◈ APPROACHING: ${name.toUpperCase()}`;
+  el.classList.add('visible');
+  if (notifyTimeout) clearTimeout(notifyTimeout);
+  notifyTimeout = setTimeout(() => el.classList.remove('visible'), 4000);
+}
+
+// ══════════════════════════════════════════
+//  TIMER & CLOCK
+// ══════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const cl = document.getElementById('real-clock');
+  if (cl) cl.textContent = now.toLocaleTimeString('en-US', {hour12: false});
+  if (!state.running) return;
+  state.elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+  const remaining = Math.max(0, state.totalSeconds - state.elapsed);
+  const progress = Math.min(1, state.elapsed / state.totalSeconds);
+  const pp = document.getElementById('progress-pct');
+  const pb = document.getElementById('progress-bar');
+  const pl = document.getElementById('progress-label');
+  if (pp) pp.textContent = Math.floor(progress * 100) + '%';
+  if (pb) pb.style.width = (progress * 100) + '%';
+  if (pl) { const km = Math.floor(progress * state.selectedMinutes * 42); pl.textContent = `${km.toLocaleString()} AU traveled`; }
+  const rm = Math.floor(remaining / 60), rs = remaining % 60;
+  const tr = document.getElementById('time-remaining');
+  if (tr) tr.textContent = `${rm}:${String(rs).padStart(2,'0')}`;
+  const em = Math.floor(state.elapsed / 60), es = state.elapsed % 60;
+  const te = document.getElementById('time-elapsed');
+  if (te) te.textContent = `Elapsed: ${em}:${String(es).padStart(2,'0')}`;
+  if (remaining === 0) completeVoyage();
+}
+
+// ══════════════════════════════════════════
+//  LAUNCH / END
+// ══════════════════════════════════════════
+function launchVoyage() {
+  document.getElementById('launch-btn').disabled = true;
+  document.getElementById('launch-btn').textContent = '⚡ INITIATING...';
+  state.totalSeconds = state.selectedMinutes * 60;
+
+  // Build sound UI (deferred until voyage screen is visible)
+  buildSoundUI();
+
+  const setupScreen = document.getElementById('setup-screen');
+  setupScreen.classList.add('launching');
+  setTimeout(() => {
+    document.getElementById('voyage-screen').style.display = 'block';
+    initVoyage();
+    updateClock();
+    const overlay = document.getElementById('warp-overlay');
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.remove('active'), 600);
+    setTimeout(() => { setupScreen.style.display = 'none'; }, 2000);
+  }, 500);
+}
+
+function endVoyage() {
+  if (!confirm('End this study session?')) return;
+  completeVoyage();
+}
+
+function completeVoyage() {
+  state.running = false;
+  cancelAnimationFrame(state.animFrame);
+  clearInterval(state.tipInterval);
+  clearInterval(state.clockInterval);
+  if (spotifyPollInterval) clearInterval(spotifyPollInterval);
+  // Stop all sounds
+  Object.keys(soundNodes).forEach(id => stopSound(id));
+
+  const elapsed = Math.floor((Date.now() - (state.startTime || Date.now())) / 1000);
+  const em = Math.floor(elapsed/60), es = elapsed%60;
+
+  document.getElementById('voyage-screen').innerHTML = `
+    <canvas id="space-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10">
+      <div style="background:rgba(5,8,18,0.95);border:1px solid rgba(0,212,255,0.25);border-radius:4px;padding:56px;max-width:500px;width:90%;text-align:center;box-shadow:0 0 80px rgba(0,50,150,0.3)">
+        <div style="font-family:var(--font-hud);font-size:9px;letter-spacing:4px;color:var(--hud-cyan);opacity:0.7;margin-bottom:16px">VOYAGE COMPLETE</div>
+        <div style="font-family:var(--font-hud);font-size:36px;font-weight:900;background:linear-gradient(135deg,#fff,#a0c8ff,var(--hud-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">ODYSSEY</div>
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:36px;letter-spacing:1px">Mission accomplished. You studied well, explorer.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:36px">
+          <div><div style="font-family:var(--font-hud);font-size:24px;color:var(--hud-cyan)">${em}:${String(es).padStart(2,'0')}</div><div style="font-size:10px;color:var(--text-dim);margin-top:4px">TIME STUDIED</div></div>
+          <div><div style="font-family:var(--font-hud);font-size:24px;color:var(--hud-amber)">${state.planetsVisited}</div><div style="font-size:10px;color:var(--text-dim);margin-top:4px">WORLDS FOUND</div></div>
+          <div><div style="font-family:var(--font-hud);font-size:24px;color:var(--hud-green)">${state.coords.x.toFixed(0)}</div><div style="font-size:10px;color:var(--text-dim);margin-top:4px">AU TRAVELED</div></div>
+        </div>
+        <button onclick="location.reload()" style="width:100%;padding:16px;background:linear-gradient(90deg,#0066ff,#00aaff);border:none;border-radius:3px;cursor:pointer;font-family:var(--font-hud);font-size:12px;letter-spacing:3px;color:white;font-weight:700">↺ NEW VOYAGE</button>
+      </div>
+    </div>`;
+
+  const c = document.getElementById('space-canvas');
+  const cx2 = c.getContext('2d');
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  cx2.fillStyle = '#020209'; cx2.fillRect(0,0,c.width,c.height);
+  for(let i=0;i<200;i++){
+    cx2.beginPath(); cx2.arc(Math.random()*c.width,Math.random()*c.height,Math.random()*1.5,0,Math.PI*2);
+    cx2.fillStyle=`rgba(200,220,255,${Math.random()*0.6})`; cx2.fill();
+  }
+}
+
+window.addEventListener('resize', () => {
+  if (canvas) { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+});
+</script>
+</body>
+</html>
